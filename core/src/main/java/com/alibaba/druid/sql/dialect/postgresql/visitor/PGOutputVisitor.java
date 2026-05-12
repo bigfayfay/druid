@@ -426,7 +426,8 @@ public class PGOutputVisitor extends SQLASTOutputVisitor implements PGASTVisitor
                 print('(');
                 expr.accept(this);
                 print(')');
-            } else if (expr instanceof PGTypeCastExpr && dataType.getArguments().isEmpty()) {
+            } else if (expr instanceof PGTypeCastExpr && dataType.getArguments().isEmpty()
+                    && dataType.getWithTimeZone() == null) {
                 dataType.accept(this);
                 print('(');
                 visit((PGTypeCastExpr) expr);

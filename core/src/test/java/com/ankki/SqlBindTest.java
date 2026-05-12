@@ -15,15 +15,16 @@ public class SqlBindTest extends TestCase {
         // 1. 参数化
         List<Object> outParameters = new ArrayList<>();
         String parameterizedSql = ParameterizedOutputVisitorUtils.parameterize(
-                "SELECT * FROM t WHERE id = 1 AND name = 'test'",
-                DbType.mysql,
+                BaseData.pg_insert_sql_4701,
+                DbType.postgresql,
                 outParameters
         );
+        System.out.println(parameterizedSql);
         // parameterizedSql = "SELECT * FROM t WHERE id = ? AND name = ?"
         // outParameters = [1, "test"]
 
         // 2. 还原
-        String restoredSql = SQLUtils.format(parameterizedSql, DbType.mysql, outParameters);
+        String restoredSql = SQLUtils.format(parameterizedSql, DbType.postgresql, outParameters);
         // restoredSql = "SELECT * FROM t WHERE id = 1 AND name = 'test'"
         System.out.println(restoredSql);
     }
