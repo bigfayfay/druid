@@ -80,7 +80,7 @@ public class SQLSelectTest extends TestCase {
     }
 
     public void test_select_6() throws Exception {
-        String sql = "SELECT CONCAT(last_name,', ',first_name) AS full_name FROM mytable ORDER BY full_name;";
+        String sql = "SELECT CONCAT(last_name,', ',first_name) AS full_name FROM mytable where a1='b' and exists(select 1 from yourtable t2 where t2.id=mytable.id) ORDER BY full_name;";
 
         SQLStatementParser parser = new MySqlStatementParser(sql);
         List<SQLStatement> stmtList = parser.parseStatementList();

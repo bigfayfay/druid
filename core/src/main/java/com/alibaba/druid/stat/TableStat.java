@@ -42,6 +42,7 @@ public class TableStat {
     int addCount; // odps add table
     int addPartitionCount; // odps add partition
     int analyzeCount; // odps analyze table
+    List<String> statType = new ArrayList<>();
 
     public TableStat() {
     }
@@ -52,6 +53,7 @@ public class TableStat {
 
     public void incrementReferencedCount() {
         referencedCount++;
+        statType.add("Referenced");
     }
 
     public int getDropIndexCount() {
@@ -60,10 +62,12 @@ public class TableStat {
 
     public void incrementDropIndexCount() {
         this.dropIndexCount++;
+        statType.add("DropIndex");
     }
 
     public void incrementAddCount() {
         this.addCount++;
+        statType.add("Add");
     }
 
     public int getAddCount() {
@@ -72,6 +76,7 @@ public class TableStat {
 
     public void incrementAddPartitionCount() {
         this.addPartitionCount++;
+        statType.add("AddPartition");
     }
 
     public int getAddPartitionCount() {
@@ -84,6 +89,7 @@ public class TableStat {
 
     public void incrementCreateIndexCount() {
         createIndexCount++;
+        statType.add("CreateIndex");
     }
 
     public int getAlterCount() {
@@ -92,6 +98,7 @@ public class TableStat {
 
     public void incrementAlterCount() {
         this.alterCount++;
+        statType.add("Alter");
     }
 
     public int getCreateCount() {
@@ -100,6 +107,7 @@ public class TableStat {
 
     public void incrementCreateCount() {
         this.createCount++;
+        statType.add("Create");
     }
 
     public int getMergeCount() {
@@ -108,6 +116,7 @@ public class TableStat {
 
     public void incrementMergeCount() {
         this.mergeCount++;
+        statType.add("Merge");
     }
 
     public int getDropCount() {
@@ -116,6 +125,7 @@ public class TableStat {
 
     public void incrementDropCount() {
         dropCount++;
+        statType.add("Drop");
     }
 
     public void setDropCount(int dropCount) {
@@ -128,6 +138,7 @@ public class TableStat {
 
     public void incrementSelectCount() {
         selectCount++;
+        statType.add("Select");
     }
 
     public void setSelectCount(int selectCount) {
@@ -140,6 +151,7 @@ public class TableStat {
 
     public void incrementUpdateCount() {
         updateCount++;
+        statType.add("Update");
     }
 
     public void setUpdateCount(int updateCount) {
@@ -152,6 +164,7 @@ public class TableStat {
 
     public void incrementDeleteCount() {
         this.deleteCount++;
+        statType.add("Delete");
     }
 
     public void setDeleteCount(int deleteCount) {
@@ -160,6 +173,7 @@ public class TableStat {
 
     public void incrementInsertCount() {
         this.insertCount++;
+        statType.add("Insert");
     }
 
     public int getInsertCount() {
@@ -168,6 +182,7 @@ public class TableStat {
 
     public void setInsertCount(int insertCount) {
         this.insertCount = insertCount;
+        statType.add("Insert");
     }
 
     public int getAnalyzeCount() {
@@ -176,6 +191,11 @@ public class TableStat {
 
     public void incrementAnalyzeCount() {
         this.analyzeCount++;
+        statType.add("Analyze");
+    }
+
+    public List<String> getStatType() {
+        return statType;
     }
 
     public String toString() {
@@ -222,6 +242,7 @@ public class TableStat {
 
         return buf.toString();
     }
+
 
     public static class Name {
         private final String name;

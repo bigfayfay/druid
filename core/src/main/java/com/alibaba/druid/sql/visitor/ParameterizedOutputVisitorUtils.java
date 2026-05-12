@@ -36,10 +36,9 @@ import com.alibaba.druid.sql.dialect.phoenix.visitor.PhoenixOutputVisitor;
 import com.alibaba.druid.sql.dialect.postgresql.visitor.PGOutputVisitor;
 import com.alibaba.druid.sql.dialect.presto.visitor.PrestoOutputVisitor;
 import com.alibaba.druid.sql.dialect.sqlserver.visitor.SQLServerOutputVisitor;
-import com.alibaba.druid.sql.parser.SQLParserFeature;
-import com.alibaba.druid.sql.parser.SQLParserUtils;
-import com.alibaba.druid.sql.parser.SQLSelectListCache;
-import com.alibaba.druid.sql.parser.SQLStatementParser;
+import com.alibaba.druid.sql.parser.*;
+import com.alibaba.druid.support.logging.Log;
+import com.alibaba.druid.support.logging.LogFactory;
 import com.alibaba.druid.util.FnvHash;
 
 import java.util.List;
@@ -47,6 +46,8 @@ import java.util.Map;
 import java.util.TimeZone;
 
 public class ParameterizedOutputVisitorUtils {
+    private static final Log LOG = LogFactory.getLog(ParameterizedOutputVisitorUtils.class);
+
     private static final SQLParserFeature[] defaultFeatures = {
             SQLParserFeature.EnableSQLBinaryOpExprGroup,
             SQLParserFeature.UseInsertColumnsCache,
@@ -76,7 +77,14 @@ public class ParameterizedOutputVisitorUtils {
     };
 
     public static String parameterize(String sql, DbType dbType) {
-        return parameterize(sql, dbType, null, null);
+        try {
+            return parameterize(sql, dbType, null, null);
+        } catch (Exception e) {
+            if (!(e instanceof ParserException)) {
+                LOG.error("excep: " + e);
+            }
+            return null;
+        }
     }
 
     public static String parameterize(String sql, DbType dbType, VisitorFeature... features) {

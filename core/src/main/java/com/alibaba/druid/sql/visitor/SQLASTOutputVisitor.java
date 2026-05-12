@@ -549,9 +549,9 @@ public class SQLASTOutputVisitor extends SQLASTVisitorAdapter implements Paramet
             return;
         }
 
-        print('\n');
+        print(' ');
         lines++;
-        printIndent();
+//        printIndent();
     }
 
     public void println(String text) {

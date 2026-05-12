@@ -45,7 +45,7 @@
 	</properties>
 
 	<modules>
-		<module>core</module>
+		<module>druid-ak</module>
 		<module>druid-spring-boot-starter</module>
 		<module>druid-wrapper</module>
 		<module>druid-demo-petclinic</module>
@@ -190,6 +190,10 @@
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>3.0.0-M7</version>
+					<configuration>
+						<forkCount>1C</forkCount>
+						<reuseForks>true</reuseForks>
+					</configuration>
 				</plugin>
 				<plugin>
 					<artifactId>maven-assembly-plugin</artifactId>
