@@ -1,0 +1,1 @@
+UPDATE ud.xfer_statfile_record xfer_statfile_record SET file_offset = ($1)::numeric(10,0) WHERE ((file_name)::text = ($2)::text);($1 = '137813', $2 = '/data1/xfer/stat/xfer_fujian_cddc_CCF_IBCF.stat.20260424')
