@@ -4,8 +4,8 @@ import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.visitor.ParameterizedOutputVisitorUtils;
 import com.ankki.druid.parser.AkDbTypeEnum;
+import com.ankki.druid.parser.CustomerOutputVisitorUtils;
 import com.ankki.druid.parser.bind.ParameterValuesFormatter;
-import com.ankki.druid.parser.v2.CustomerOutputVisitorUtils;
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
