@@ -121,7 +121,9 @@ public class CustomerOutputVisitorUtils {
         result[0] = templateResult.getStatus().name();
         result[1] = templateResult.getMd5();
         result[2] = templateResult.getTemplate();
-        result[3] = ParameterValuesFormatter.sqlBind(templateResult.getParameterValues());
+        // 优先使用直接截取的 sqlBind（绑定变量场景），否则从 parameterValues 生成
+        String sqlBind = templateResult.getSqlBind();
+        result[3] = sqlBind != null ? sqlBind : ParameterValuesFormatter.sqlBind(templateResult.getParameterValues());
         return result;
     }
 
@@ -137,13 +139,18 @@ public class CustomerOutputVisitorUtils {
         if (parameterValues)
             result.setParameterValues(new ArrayList());
         try {
-            String removeParameterSql = getRemoveBindingParameterSql(sql, dbType);
-            if (StringUtils.isEmpty(removeParameterSql)) {
-                result.setStatus(AkSqlParserStatusEnum.Failure);
-                result.setExceptionMsg("binding parameter fail");
-                return result;
+            String sqlTemplate;
+            int bindIdx = sql.lastIndexOf(BIND_APPEND);
+            if (bindIdx > 0) {
+                // 含有绑定变量：直接截取前部分作为 template, 后半部分作为 sqlBind
+                // 避免昂贵的 SQL 解析、格式化和参数化操作
+                sqlTemplate = sql.substring(0, bindIdx);
+                String sqlBind = sql.substring(bindIdx + 1); // 从 "(" 开始到末尾
+                result.setSqlBind(sqlBind);
+            } else {
+                // 不含绑定变量：直接按原始提取
+                sqlTemplate = processSqlTemplate(sql, result);
             }
-            String sqlTemplate = processSqlTemplate(removeParameterSql, result);
             if (StringUtils.isEmpty(sqlTemplate)) {
                 result.setStatus(AkSqlParserStatusEnum.Failure);
                 result.setExceptionMsg("sql template is empty");

@@ -5921,7 +5921,25 @@ public class SQLASTOutputVisitor extends SQLASTVisitorAdapter implements Paramet
 
         if (x.getUsers() != null) {
             print0(ucase ? " TO " : " to ");
-            printAndAccept(x.getUsers(), ",");
+            if (parameterized) {
+                for (int i = 0; i < x.getUsers().size(); i++) {
+                    if (i != 0) {
+                        print(',');
+                    }
+                    SQLExpr user = x.getUsers().get(i);
+                    print('?');
+                    incrementReplaceCunt();
+                    if (this.parameters != null) {
+                        if (user instanceof SQLIdentifierExpr) {
+                            this.parameters.add(((SQLIdentifierExpr) user).getName());
+                        } else {
+                            this.parameters.add(user.toString());
+                        }
+                    }
+                }
+            } else {
+                printAndAccept(x.getUsers(), ",");
+            }
         }
 
         if (x.getWithGrantOption()) {

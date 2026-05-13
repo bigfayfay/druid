@@ -18,7 +18,7 @@ public class SqlBindTest extends TestCase {
         // 1. 参数化
         List<Object> outParameters = new ArrayList<>();
         String parameterizedSql = ParameterizedOutputVisitorUtils.parameterize(
-                BaseData.pg_insert_sql_4701,
+                "GRANT ALL ON TABLE ud.dr_ggprs_5_20260514 TO fangdb",
                 DbType.postgresql,
                 outParameters
         );
@@ -43,7 +43,7 @@ public class SqlBindTest extends TestCase {
     public void test_bind() {
         // 1. 参数化
         String[] template = CustomerOutputVisitorUtils.getSqlTemplate_v2(
-                BaseData.pg_update_sql_177,
+                "GRANT ALL ON TABLE ud.dr_ggprs_5_20260514 TO fangdb",
                 AkDbTypeEnum.PostgreSQL.getTypeId()
         );
         String parameterizedSql = template[2];
