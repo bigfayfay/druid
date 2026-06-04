@@ -1,9 +1,42 @@
 spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST_NAME:localhost}:3306/${DB_NAME:test_sql_zbzq_20251125}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
-    password: Ankki_mySQL123
+  application:
+    name: audit-template
+
+  datasource: #
+    dynamic:
+      primary: mysql
+      strict: false
+      datasource:
+        mysql:
+          url: jdbc:mysql://${DB_HOST_NAME:localhost}:3306/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          username: ${DB_USER:root}
+          password: Ankki_mySQL123
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          druid:
+            initialSize: 10
+            maxActive: 100
+            minIdle: 10
+            maxWait: 60000
+            validationQuery: SELECT 1
+            testWhileIdle: true
+            testOnBorrow: true
+            testOnReturn: true
+            poolPreparedStatements: true
+        ck:
+          url: jdbc:clickhouse://localhost:8123/bs_audit?socket_timeout=6000000
+          username: root
+          password: Ankki_cK123
+          driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+          druid:
+            initialSize: 10
+            maxActive: 100
+            minIdle: 10
+            maxWait: 60000
+            validationQuery: SELECT 1
+            testWhileIdle: true
+            testOnBorrow: true
+            testOnReturn: true
+
 
 mybatis-plus:
   configuration:
@@ -22,5 +55,6 @@ perf:
   write-failed-file: ${PERF_WRITE_FAILED_FILE:false}
   write-result-db: ${PERF_WRITE_RESULT_DB:false}
   start-id: ${PERF_START_ID:0}
+  data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:audit}
 
 # 日志配置统一由 logback-spring.xml 管理
