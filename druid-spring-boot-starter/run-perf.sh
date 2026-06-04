@@ -30,6 +30,7 @@ CACHE_USE=""
 # 数据库配置
 DB_HOST_NAME=172.19.4.41
 DB_NAME=test_sql_zbzq_20251125
+DB_USER=sroot
 
 # JVM 参数
 JVM_OPTS="-Xms1g -Xmx4g -XX:+UseG1GC"
@@ -68,6 +69,8 @@ while [ $# -gt 0 ]; do
             DB_NAME="$2"; shift 2 ;;
         --db-host)
             DB_HOST_NAME="$2"; shift 2 ;;
+        --db-user)
+            DB_USER="$2"; shift 2 ;;
         --jvm)
             JVM_OPTS="$2"; shift 2 ;;
         --jar)
@@ -102,6 +105,7 @@ while [ $# -gt 0 ]; do
             echo "  --start-id <n>              起始ID, 用于断点续跑 (default: 0)"
             echo "  --db-name <name>            数据库名 (default: test_sql_zbzq_20251125)"
             echo "  --db-host <host>            数据库主机地址 (default: 172.19.4.41)"
+            echo "  --db-user <user>            数据库用户名 (default: sroot)"
             echo "  --jvm '<opts>'              JVM参数 (default: -Xms1g -Xmx4g -XX:+UseG1GC)"
             echo "  --jar <path>                JAR文件路径"
             echo "  --monitor                   启用SQL模板监控"
@@ -136,6 +140,7 @@ echo " JAR:              $JAR_FILE"
 echo " JVM:              $JVM_OPTS"
 echo " DB_HOST_NAME:     $DB_HOST_NAME"
 echo " DB_NAME:          $DB_NAME"
+echo " DB_USER:          $DB_USER"
 echo " perf.enabled:     $PERF_ENABLED"
 echo " perf.batch-size:  $PERF_BATCH_SIZE"
 echo " perf.db-type:     $PERF_DB_TYPE"
@@ -174,6 +179,7 @@ JAVA_CMD="java $JVM_OPTS \
     $VM_OPTS \
     -DDB_HOST_NAME=$DB_HOST_NAME \
     -DDB_NAME=$DB_NAME \
+    -DDB_USER=$DB_USER \
     -jar $JAR_FILE"
 
 # ============== 检查是否已启动 ==============

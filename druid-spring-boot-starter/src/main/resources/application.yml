@@ -1,8 +1,8 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST_NAME:localhost}:3306/${DB_NAME:test_sql_zbzq_20251125}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
+    url: jdbc:mysql://${DB_HOST_NAME:localhost}:3306/${DB_NAME:bs_audit}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:sroot}
     password: Ankki_mySQL123
 
 mybatis-plus:

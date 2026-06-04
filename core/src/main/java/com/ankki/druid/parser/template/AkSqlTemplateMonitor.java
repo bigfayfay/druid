@@ -2,7 +2,6 @@ package com.ankki.druid.parser.template;
 
 import com.ankki.druid.parser.AkSqlParserStatusEnum;
 import com.ankki.druid.parser.config.VmOptions;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -177,11 +176,7 @@ public class AkSqlTemplateMonitor {
          * SQL 总字符长度（用于计算平均长度）
          */
         final LongAdder totalSqlLen = new LongAdder();
-        /**
-         * 区间速度快照（用于计算最近一个周期的真实多线程吞吐）
-         */
-        private volatile long prevTotal;
-        private volatile long prevTimeMs;
+
         /** 总空闲/等待时间（毫秒） */
 //        private final LongAdder idleCostMs = new LongAdder();
 
@@ -204,7 +199,6 @@ public class AkSqlTemplateMonitor {
             this.status = status;
             this.startTimeMs = System.currentTimeMillis();
             this.startTime = LocalDateTime.now();
-            this.prevTimeMs = this.startTimeMs;
             for (int i = 0; i < histogram.length; i++) {
                 histogram[i] = new LongAdder();
             }
@@ -261,16 +255,6 @@ public class AkSqlTemplateMonitor {
          * 区间吞吐量 (ops/sec)：最近一个报告周期内的真实多线程吞吐
          * <p>每次调用会更新快照，因此每个报告周期只应调用一次</p>
          */
-        public double getIntervalSpeed() {
-            long now = System.currentTimeMillis();
-            long currTotal = total.sum();
-            long deltaOps = currTotal - prevTotal;
-            long deltaMs = now - prevTimeMs;
-            // 更新快照
-            prevTotal = currTotal;
-            prevTimeMs = now;
-            return deltaMs > 0 ? deltaOps * 1000.0 / deltaMs : 0;
-        }
 
         /**
          * 平均并发度：累计执行耗时 / 墙上时钟时间
@@ -313,8 +297,6 @@ public class AkSqlTemplateMonitor {
             }
             startTimeMs = System.currentTimeMillis();
             startTime = LocalDateTime.now();
-            prevTotal = 0;
-            prevTimeMs = startTimeMs;
         }
 
         // ========== 内部方法 ==========
@@ -590,9 +572,9 @@ public class AkSqlTemplateMonitor {
                 /* status-
                  * [Success   ] n=1898798              | elapsed=350005              ms | exec=2790670             ms | avgLen=4793     | speed(exec/elapsed)=   680.4/5425.1   ops/s
                  */
-                String line = String.format("  [%-10s] n=%-20d | elapsed=%-20dms | exec=%-20dms | avgLen=%-6d | speed(exec/elapsed/interval)=%8.1f/%8.1f/%8.1f ops/s | concurrency=%.1f",
+                String line = String.format("  [%-10s] n=%-20d | elapsed=%-20dms | exec=%-20dms | avgLen=%-6d | speed(exec/elapsed)=%8.1f/%8.1f ops/s | concurrency=%.1f",
                         s.name(), cnt, m.getElapsedMs(), TimeUnit.NANOSECONDS.toMillis(m.execTotalCostNs.sum()),
-                        m.getAvgSqlLen(), m.getExecSpeed(), m.getElapsedSpeed(), m.getIntervalSpeed(), m.getAvgConcurrency());
+                        m.getAvgSqlLen(), m.getExecSpeed(), m.getElapsedSpeed(), m.getAvgConcurrency());
                 r.row(line);
                 if (cnt > 0) {
                     long[] hist = m.getHistogramSnapshot();
@@ -640,7 +622,7 @@ public class AkSqlTemplateMonitor {
         return cpuInfo;
     }
 
-    private static @NonNull String getOsMemInfo(com.sun.management.OperatingSystemMXBean sunOs) {
+    private static String getOsMemInfo(com.sun.management.OperatingSystemMXBean sunOs) {
         String osMemInfo;
         long totalPhysMem = sunOs.getTotalPhysicalMemorySize();
         long freePhysMem = sunOs.getFreePhysicalMemorySize();
@@ -658,7 +640,7 @@ public class AkSqlTemplateMonitor {
          * Survivor Space       * Eden GC 后存活的对象暂存区（S0/S1 交替使用）
          * Old Gen              * 长期存活对象（经过多次 Minor GC 后晋升到此）
          */
-        StringBuilder heapPools = new StringBuilder("Heap Pools: ");
+        StringBuilder heapPools = new StringBuilder("JVM Heap Pools: ");
         for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
             if (pool.getType() == MemoryType.HEAP) {
                 MemoryUsage pu = pool.getUsage();

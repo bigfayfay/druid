@@ -298,6 +298,13 @@ public interface OracleASTVisitor extends SQLASTVisitor {
     default void endVisit(OracleAlterSessionStatement x) {
     }
 
+    default boolean visit(OracleAlterSystemStatement x) {
+        return true;
+    }
+
+    default void endVisit(OracleAlterSystemStatement x) {
+    }
+
     default boolean visit(OracleDatetimeExpr x) {
         return true;
     }

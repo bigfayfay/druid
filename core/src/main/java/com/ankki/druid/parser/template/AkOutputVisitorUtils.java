@@ -18,13 +18,14 @@ public class AkOutputVisitorUtils {
     private static final String BIND_APPEND = ";(";
 
     public static String[] getSqlTemplate_v2(String sql, Integer akDbTypeId) {
-        String[] result = new String[4];
+        String[] result = new String[5];
         AkTemplateResult templateResult = AkOutputVisitorUtils.getSqlTemplateBindValues(sql, akDbTypeId);
         result[0] = templateResult.getStatus().name();
         result[1] = templateResult.getMd5();
         result[2] = templateResult.getTemplate();
         String sqlBind = templateResult.getSqlBind();
         result[3] = sqlBind != null ? sqlBind : ParameterValuesFormatter.sqlBind(templateResult.getParameterValues());
+        result[4] = templateResult.getExceptionMsg();
         return result;
     }
 
