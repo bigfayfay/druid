@@ -2,7 +2,10 @@ package com.ankki.perf.runner;
 
 import cn.hutool.core.io.FileUtil;
 import com.ankki.druid.parser.AkSqlParserStatusEnum;
-import com.ankki.druid.parser.CustomerOutputVisitorUtils;
+import com.ankki.druid.parser.config.VmOptions;
+import com.ankki.druid.parser.template.AkLightweightCachedOutputVisitorUtils;
+import com.ankki.druid.parser.template.AkOutputVisitorUtils;
+import com.ankki.druid.parser.template.AkSqlTemplateMonitor;
 import com.ankki.perf.config.PerfTestConfig;
 import com.ankki.perf.entity.SqlTemplateQueryRequest;
 import com.ankki.perf.entity.SqlTypeBO;
@@ -167,21 +170,20 @@ public class PerfTestRunner implements CommandLineRunner {
                         }
                         for (SqlTypeBO record : batch) {
                             long parseStart = System.nanoTime();
-                            String[] sqlTemplateV2 = CustomerOutputVisitorUtils.getSqlTemplate_v2(
-                                    record.getOperSentence(), record.getDbType());
-                            long costMs = (System.nanoTime() - parseStart) / 1_000_000;
+                            String[] sqlRes = getSqlTemplate_v3(record.getOperSentence(), record.getDbType());
                             long costNanos = System.nanoTime() - parseStart;
+//                            long costMs = (costNanos) / 1_000_000;
 
-                            AkSqlParserStatusEnum statusEnum = AkSqlParserStatusEnum.fastValueOf(sqlTemplateV2[0]);
+                            AkSqlParserStatusEnum statusEnum = AkSqlParserStatusEnum.fastValueOf(sqlRes[0]);
 
                             // 构建结果记录
                             SqlTemplateRes res = new SqlTemplateRes();
                             res.setId(record.getId());
-                            res.setStatus(sqlTemplateV2[0]);
-                            res.setCostMs(costMs);
+                            res.setStatus(sqlRes[0]);
+                            res.setCostNs(costNanos);
                             res.setSqlLen(record.getOperSentence() != null ? record.getOperSentence().length() : 0);
                             if (AkSqlParserStatusEnum.Success != statusEnum) {
-                                res.setFailReason(sqlTemplateV2.length > 4 ? sqlTemplateV2[4] : null);
+                                res.setFailReason(sqlRes.length > 4 ? sqlRes[4] : null);
                             }
 
                             // 记录线程级别的统计
@@ -239,6 +241,37 @@ public class PerfTestRunner implements CommandLineRunner {
         log.error("exit ...");
         System.exit(0);
     }
+
+
+    static final boolean CACHE_USE = VmOptions.getBoolean(VmOptions.CACHE_USE);
+    public static String[] getSqlTemplate_v3(String sql, Integer akDbTypeId) {
+        // 快速路径：监控禁用时零开销直接执行
+        if (!AkSqlTemplateMonitor.MONITOR_ENABLED) {
+            if (CACHE_USE) {
+                return AkLightweightCachedOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+            } else {
+                return AkOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+            }
+        }
+
+        // 监控启用路径
+        AkSqlTemplateMonitor.ensureMonitorStarted();
+        long startTimeNs = AkSqlTemplateMonitor.startTiming();
+        AkSqlParserStatusEnum status = null;
+        try {
+            String[] result;
+            if (CACHE_USE) {
+                result = AkLightweightCachedOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+            } else {
+                result = AkOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+            }
+            status = AkSqlParserStatusEnum.fastValueOf(result[0]);
+            return result;
+        } finally {
+            AkSqlTemplateMonitor.endTiming(startTimeNs, status, sql.length());
+        }
+    }
+
 
     private List<SqlTypeBO> fetchBatch(long lastId, int batchSize) {
         SqlTemplateQueryRequest request = new SqlTemplateQueryRequest(lastId, batchSize);

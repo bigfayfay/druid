@@ -21,9 +21,9 @@ public class SqlTemplateRes {
     private String status;
 
     /**
-     * 耗时(ms)
+     * 耗时(ns)
      */
-    private Long costMs;
+    private Long costNs;
 
     /**
      * SQL长度
