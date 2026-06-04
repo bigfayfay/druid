@@ -41,6 +41,10 @@ public enum AkDbTypeEnum {
         return Arrays.asList(AkDbTypeEnum.values()).stream().filter(type -> typeId == type.getTypeId()).findFirst().orElse(NoSupports).getDruidDbType();
     }
 
+    public static AkDbTypeEnum of(DbType type) {
+        return Arrays.asList(AkDbTypeEnum.values()).stream().filter(t -> type == t.getDruidDbType()).findFirst().orElse(NoSupports);
+    }
+
     public int getTypeId() {
         return this.typeId;
     }

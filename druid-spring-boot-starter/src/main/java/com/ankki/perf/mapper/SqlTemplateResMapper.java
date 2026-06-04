@@ -1,0 +1,24 @@
+package com.ankki.perf.mapper;
+
+import com.ankki.perf.entity.SqlTemplateRes;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+@Mapper
+public interface SqlTemplateResMapper extends BaseMapper<SqlTemplateRes> {
+
+    /**
+     * INSERT ON DUPLICATE KEY UPDATE：id 不存在则 insert，存在则 update
+     */
+    @Insert("INSERT INTO sql_template_res (id, status, cost_ms, sql_len, fail_reason, remark) " +
+            "VALUES (#{r.id}, #{r.status}, #{r.costMs}, #{r.sqlLen}, #{r.failReason}, #{r.remark}) " +
+            "ON DUPLICATE KEY UPDATE " +
+            "status = VALUES(status), " +
+            "cost_ms = VALUES(cost_ms), " +
+            "sql_len = VALUES(sql_len), " +
+            "fail_reason = VALUES(fail_reason), " +
+            "remark = VALUES(remark)")
+    int insertOrUpdate(@Param("r") SqlTemplateRes record);
+}

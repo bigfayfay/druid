@@ -13,13 +13,15 @@ import com.alibaba.druid.sql.ast.statement.SQLUpdateStatement;
 import com.alibaba.druid.sql.visitor.ParameterizedOutputVisitorUtils;
 import com.alibaba.druid.sql.visitor.SQLASTOutputVisitor;
 import com.alibaba.druid.util.StringUtils;
-import com.ankki.druid.parser.AkDruidSqlParser;
-import com.ankki.druid.parser.AkSqlParserStatusEnum;
+import com.ankki.druid.parser.config.VmOptions;
 import com.ankki.druid.parser.oracle.InsertTemplateStandardizer;
 import com.ankki.druid.parser.oracle.SqlTemplateStandardizer;
 import com.ankki.druid.parser.template.AkLightweightCachedDruidSqlMonitor;
 import com.ankki.druid.parser.template.AkLightweightCachedOutputVisitorUtils;
+import com.ankki.druid.parser.template.AkOutputVisitorUtils;
+import com.ankki.druid.parser.template.AkSqlTemplateMonitor;
 import com.ankki.druid.parser.visitor.AkSchemaStatVisitor;
+
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
@@ -67,8 +69,7 @@ public class CustomerOutputVisitorUtils {
                 stmt.accept(visitor);
             }
             return out.toString();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return AkSqlParserStatusEnum.Failure.toString(e.getMessage());
         }
     }
@@ -113,18 +114,39 @@ public class CustomerOutputVisitorUtils {
             }
             String md5Hash = AkDruidSqlParser.generateMD5(sqlTemplate);
             return AkSqlParserStatusEnum.Success.toString(md5Hash + "|" + sqlTemplate);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return AkSqlParserStatusEnum.Failure.toString(e.getMessage());
         }
     }
 
+    static final boolean CACHE_USE = VmOptions.getBoolean(VmOptions.CACHE_USE);
+
     public static String[] getSqlTemplate_v2(String sql, Integer akDbTypeId) {
-        if (MONITOR_STARTED.compareAndSet(false, true)) {
-            CustomerOutputVisitorUtils.startMonitor();
+        // 快速路径：监控禁用时零开销直接执行
+        if (!AkSqlTemplateMonitor.MONITOR_ENABLED) {
+            if (CACHE_USE) {
+                return AkLightweightCachedOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+            } else {
+                return AkOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+            }
         }
-        TOTAL_CALLS.incrementAndGet();
-        return AkLightweightCachedOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+
+        // 监控启用路径
+        AkSqlTemplateMonitor.ensureMonitorStarted();
+        long startTimeNs = AkSqlTemplateMonitor.startTiming();
+        AkSqlParserStatusEnum status = null;
+        try {
+            String[] result;
+            if (CACHE_USE) {
+                result = AkLightweightCachedOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+            } else {
+                result = AkOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+            }
+            status = AkSqlParserStatusEnum.fastValueOf(result[0]);
+            return result;
+        } finally {
+            AkSqlTemplateMonitor.endTiming(startTimeNs, status, sql.length());
+        }
     }
 
     private static String processSqlTemplate(String removeParameterSql, DbType dbType, Integer akDbTypeId) throws Exception {
@@ -191,8 +213,7 @@ public class CustomerOutputVisitorUtils {
                 return typeName.toUpperCase();
             }
             return "";
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return "";
         }
     }
@@ -208,17 +229,15 @@ public class CustomerOutputVisitorUtils {
             return t;
         });
         scheduler.scheduleAtFixedRate(() -> {
-            try (PrintWriter pw = new PrintWriter(new FileWriter(CustomerOutputVisitorUtils.monitorFilePath(), true));){
+            try (PrintWriter pw = new PrintWriter(new FileWriter(CustomerOutputVisitorUtils.monitorFilePath(), true));) {
                 AkLightweightCachedDruidSqlMonitor.printAll(pw);
-            }
-            catch (Exception exception) {
+            } catch (Exception exception) {
                 // empty catch block
             }
         }, MONITOR_INTERVAL, MONITOR_INTERVAL, TimeUnit.SECONDS);
-        try (PrintWriter pw = new PrintWriter(new FileWriter(CustomerOutputVisitorUtils.monitorFilePath(), true));){
+        try (PrintWriter pw = new PrintWriter(new FileWriter(CustomerOutputVisitorUtils.monitorFilePath(), true));) {
             AkLightweightCachedDruidSqlMonitor.printAll(pw);
-        }
-        catch (Exception exception) {
+        } catch (Exception exception) {
             // empty catch block
         }
     }
@@ -238,8 +257,7 @@ public class CustomerOutputVisitorUtils {
             if (atIdx > 0) {
                 pid = name.substring(0, atIdx);
             }
-        }
-        catch (Exception name) {
+        } catch (Exception name) {
             // empty catch block
         }
         MONITOR_PID = pid;
@@ -248,8 +266,7 @@ public class CustomerOutputVisitorUtils {
         int interval = 60;
         try {
             interval = Integer.parseInt(System.getProperty("druid.monitor.interval", "60"));
-        }
-        catch (NumberFormatException numberFormatException) {
+        } catch (NumberFormatException numberFormatException) {
             // empty catch block
         }
         MONITOR_INTERVAL = Math.max(10, interval);

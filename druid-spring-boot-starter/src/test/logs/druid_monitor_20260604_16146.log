@@ -1,0 +1,292 @@
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:01:32.089662054 | PID=16146 | Uptime=PT0.015397533S
+------------------------------------------------------------
+TotalCalls=0 | Failure=0(0.00%) Success=0(0.00%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=0.00 ops/s | ElapsedSpeed=0.00 ops/s
+OS CPU[cores=32, systemUsage=0.0%, processUsage=0.0%, processCpuTime=18650ms]
+OS Memory(total=62.5 GB, free=57.0 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 104.7 MB | NonHeap(used): 49.7 MB | Free/Total: 3.9 GB/4.0 GB
+  [Failure   ] n=0                    | elapsed=16                  ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [Success   ] n=0                    | elapsed=17                  ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [NonSupport] n=0                    | elapsed=17                  ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=17                  ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:01:42.078746944 | PID=16146 | Uptime=PT10.004460133S
+------------------------------------------------------------
+TotalCalls=6546 | Failure=48(0.73%) Success=6498(99.27%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=657.56 ops/s | ElapsedSpeed=654.34 ops/s
+OS CPU[cores=32, systemUsage=10.0%, processUsage=10.0%, processCpuTime=50440ms]
+OS Memory(total=62.5 GB, free=54.4 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 1.1 GB | NonHeap(used): 58.8 MB | Free/Total: 2.9 GB/4.0 GB
+  [Failure   ] n=48                   | elapsed=10005               ms | exec=11                  ms | avgLen=894      | speed(exec/elapsed)=  4246.8/4.8      ops/s
+              <50μs     : 1                    (  2.1%) [>20K     ops/s]
+              50-67μs   : 2                    (  4.2%) [15K-20K  ops/s]
+              67-100μs  : 3                    (  6.3%) [10K-15K  ops/s]
+              100-133μs : 11                   ( 22.9%) [7.5K-10K ops/s]
+              133-200μs : 15                   ( 31.3%) [5K-7.5K  ops/s]
+              200-400μs : 13                   ( 27.1%) [2.5K-5K  ops/s]
+              400μs-1ms : 2                    (  4.2%) [1K-2.5K  ops/s]
+              1-2ms     : 0                    (  0.0%) [500-1K   ops/s]
+              >2ms      : 1                    (  2.1%) [<500     ops/s]
+  [Success   ] n=6499                 | elapsed=10007               ms | exec=9944                ms | avgLen=5357     | speed(exec/elapsed)=   653.5/649.4    ops/s
+              <50μs     : 0                    (  0.0%) [>20K     ops/s]
+              50-67μs   : 0                    (  0.0%) [15K-20K  ops/s]
+              67-100μs  : 0                    (  0.0%) [10K-15K  ops/s]
+              100-133μs : 0                    (  0.0%) [7.5K-10K ops/s]
+              133-200μs : 6                    (  0.1%) [5K-7.5K  ops/s]
+              200-400μs : 8                    (  0.1%) [2.5K-5K  ops/s]
+              400μs-1ms : 1165                 ( 17.9%) [1K-2.5K  ops/s]
+              1-2ms     : 4603                 ( 70.8%) [500-1K   ops/s]
+              >2ms      : 718                  ( 11.0%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=10008               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=10008               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:01:52.079166896 | PID=16146 | Uptime=PT20.004876908S
+------------------------------------------------------------
+TotalCalls=16524 | Failure=104(0.63%) Success=16420(99.37%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=829.50 ops/s | ElapsedSpeed=825.99 ops/s
+OS CPU[cores=32, systemUsage=5.5%, processUsage=5.5%, processCpuTime=67870ms]
+OS Memory(total=62.5 GB, free=54.4 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 2.2 GB | NonHeap(used): 60.4 MB | Free/Total: 1.8 GB/4.0 GB
+  [Failure   ] n=104                  | elapsed=20005               ms | exec=18                  ms | avgLen=1248     | speed(exec/elapsed)=  5596.0/5.2      ops/s
+              <50μs     : 1                    (  1.0%) [>20K     ops/s]
+              50-67μs   : 8                    (  7.7%) [15K-20K  ops/s]
+              67-100μs  : 21                   ( 20.2%) [10K-15K  ops/s]
+              100-133μs : 26                   ( 25.0%) [7.5K-10K ops/s]
+              133-200μs : 27                   ( 26.0%) [5K-7.5K  ops/s]
+              200-400μs : 16                   ( 15.4%) [2.5K-5K  ops/s]
+              400μs-1ms : 4                    (  3.8%) [1K-2.5K  ops/s]
+              1-2ms     : 0                    (  0.0%) [500-1K   ops/s]
+              >2ms      : 1                    (  1.0%) [<500     ops/s]
+  [Success   ] n=16421                | elapsed=20007               ms | exec=19903               ms | avgLen=3893     | speed(exec/elapsed)=   825.0/820.8    ops/s
+              <50μs     : 0                    (  0.0%) [>20K     ops/s]
+              50-67μs   : 1                    (  0.0%) [15K-20K  ops/s]
+              67-100μs  : 1                    (  0.0%) [10K-15K  ops/s]
+              100-133μs : 7                    (  0.0%) [7.5K-10K ops/s]
+              133-200μs : 9                    (  0.1%) [5K-7.5K  ops/s]
+              200-400μs : 10                   (  0.1%) [2.5K-5K  ops/s]
+              400μs-1ms : 7465                 ( 45.5%) [1K-2.5K  ops/s]
+              1-2ms     : 8055                 ( 49.1%) [500-1K   ops/s]
+              >2ms      : 874                  (  5.3%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=20008               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=20008               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:02:02.082538447 | PID=16146 | Uptime=PT30.008318407S
+------------------------------------------------------------
+TotalCalls=26476 | Failure=112(0.42%) Success=26364(99.58%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=885.68 ops/s | ElapsedSpeed=882.30 ops/s
+OS CPU[cores=32, systemUsage=4.5%, processUsage=4.5%, processCpuTime=82170ms]
+OS Memory(total=62.5 GB, free=54.3 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 1.3 GB | NonHeap(used): 58.2 MB | Free/Total: 2.7 GB/4.0 GB
+  [Failure   ] n=112                  | elapsed=30009               ms | exec=19                  ms | avgLen=1231     | speed(exec/elapsed)=  5657.1/3.7      ops/s
+              <50μs     : 1                    (  0.9%) [>20K     ops/s]
+              50-67μs   : 8                    (  7.1%) [15K-20K  ops/s]
+              67-100μs  : 24                   ( 21.4%) [10K-15K  ops/s]
+              100-133μs : 27                   ( 24.1%) [7.5K-10K ops/s]
+              133-200μs : 29                   ( 25.9%) [5K-7.5K  ops/s]
+              200-400μs : 18                   ( 16.1%) [2.5K-5K  ops/s]
+              400μs-1ms : 4                    (  3.6%) [1K-2.5K  ops/s]
+              1-2ms     : 0                    (  0.0%) [500-1K   ops/s]
+              >2ms      : 1                    (  0.9%) [<500     ops/s]
+  [Success   ] n=26367                | elapsed=30011               ms | exec=29876               ms | avgLen=3839     | speed(exec/elapsed)=   882.5/878.6    ops/s
+              <50μs     : 0                    (  0.0%) [>20K     ops/s]
+              50-67μs   : 1                    (  0.0%) [15K-20K  ops/s]
+              67-100μs  : 1                    (  0.0%) [10K-15K  ops/s]
+              100-133μs : 8                    (  0.0%) [7.5K-10K ops/s]
+              133-200μs : 10                   (  0.0%) [5K-7.5K  ops/s]
+              200-400μs : 11                   (  0.0%) [2.5K-5K  ops/s]
+              400μs-1ms : 14021                ( 53.2%) [1K-2.5K  ops/s]
+              1-2ms     : 11303                ( 42.9%) [500-1K   ops/s]
+              >2ms      : 1012                 (  3.8%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=30012               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=30012               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:02:12.080130294 | PID=16146 | Uptime=PT40.005847553S
+------------------------------------------------------------
+TotalCalls=35610 | Failure=194(0.54%) Success=35416(99.46%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=893.30 ops/s | ElapsedSpeed=890.12 ops/s
+OS CPU[cores=32, systemUsage=4.5%, processUsage=4.4%, processCpuTime=96370ms]
+OS Memory(total=62.5 GB, free=54.3 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 659.0 MB | NonHeap(used): 59.0 MB | Free/Total: 3.4 GB/4.0 GB
+  [Failure   ] n=194                  | elapsed=40007               ms | exec=29                  ms | avgLen=1303     | speed(exec/elapsed)=  6577.2/4.8      ops/s
+              <50μs     : 4                    (  2.1%) [>20K     ops/s]
+              50-67μs   : 12                   (  6.2%) [15K-20K  ops/s]
+              67-100μs  : 59                   ( 30.4%) [10K-15K  ops/s]
+              100-133μs : 53                   ( 27.3%) [7.5K-10K ops/s]
+              133-200μs : 40                   ( 20.6%) [5K-7.5K  ops/s]
+              200-400μs : 19                   (  9.8%) [2.5K-5K  ops/s]
+              400μs-1ms : 6                    (  3.1%) [1K-2.5K  ops/s]
+              1-2ms     : 0                    (  0.0%) [500-1K   ops/s]
+              >2ms      : 1                    (  0.5%) [<500     ops/s]
+  [Success   ] n=35418                | elapsed=40008               ms | exec=39836               ms | avgLen=4375     | speed(exec/elapsed)=   889.1/885.3    ops/s
+              <50μs     : 0                    (  0.0%) [>20K     ops/s]
+              50-67μs   : 1                    (  0.0%) [15K-20K  ops/s]
+              67-100μs  : 8                    (  0.0%) [10K-15K  ops/s]
+              100-133μs : 18                   (  0.1%) [7.5K-10K ops/s]
+              133-200μs : 13                   (  0.0%) [5K-7.5K  ops/s]
+              200-400μs : 12                   (  0.0%) [2.5K-5K  ops/s]
+              400μs-1ms : 18559                ( 52.4%) [1K-2.5K  ops/s]
+              1-2ms     : 15578                ( 44.0%) [500-1K   ops/s]
+              >2ms      : 1229                 (  3.5%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=40009               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=40009               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:02:22.079938610 | PID=16146 | Uptime=PT50.005664977S
+------------------------------------------------------------
+TotalCalls=45336 | Failure=227(0.50%) Success=45109(99.50%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=909.67 ops/s | ElapsedSpeed=906.61 ops/s
+OS CPU[cores=32, systemUsage=4.4%, processUsage=4.4%, processCpuTime=110280ms]
+OS Memory(total=62.5 GB, free=54.3 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 2.1 GB | NonHeap(used): 60.0 MB | Free/Total: 1.9 GB/4.0 GB
+  [Failure   ] n=227                  | elapsed=50006               ms | exec=33                  ms | avgLen=1598     | speed(exec/elapsed)=  6718.6/4.5      ops/s
+              <50μs     : 4                    (  1.8%) [>20K     ops/s]
+              50-67μs   : 13                   (  5.7%) [15K-20K  ops/s]
+              67-100μs  : 71                   ( 31.3%) [10K-15K  ops/s]
+              100-133μs : 67                   ( 29.5%) [7.5K-10K ops/s]
+              133-200μs : 45                   ( 19.8%) [5K-7.5K  ops/s]
+              200-400μs : 19                   (  8.4%) [2.5K-5K  ops/s]
+              400μs-1ms : 7                    (  3.1%) [1K-2.5K  ops/s]
+              1-2ms     : 0                    (  0.0%) [500-1K   ops/s]
+              >2ms      : 1                    (  0.4%) [<500     ops/s]
+  [Success   ] n=45111                | elapsed=50007               ms | exec=49806               ms | avgLen=4334     | speed(exec/elapsed)=   905.7/902.1    ops/s
+              <50μs     : 0                    (  0.0%) [>20K     ops/s]
+              50-67μs   : 1                    (  0.0%) [15K-20K  ops/s]
+              67-100μs  : 10                   (  0.0%) [10K-15K  ops/s]
+              100-133μs : 21                   (  0.0%) [7.5K-10K ops/s]
+              133-200μs : 15                   (  0.0%) [5K-7.5K  ops/s]
+              200-400μs : 13                   (  0.0%) [2.5K-5K  ops/s]
+              400μs-1ms : 24531                ( 54.4%) [1K-2.5K  ops/s]
+              1-2ms     : 19139                ( 42.4%) [500-1K   ops/s]
+              >2ms      : 1381                 (  3.1%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=50008               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=50009               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:02:32.082753151 | PID=16146 | Uptime=PT1M0.008550367S
+------------------------------------------------------------
+TotalCalls=55042 | Failure=334(0.61%) Success=54708(99.39%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=920.18 ops/s | ElapsedSpeed=917.23 ops/s
+OS CPU[cores=32, systemUsage=4.3%, processUsage=4.3%, processCpuTime=124020ms]
+OS Memory(total=62.5 GB, free=54.3 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 1.5 GB | NonHeap(used): 60.4 MB | Free/Total: 2.5 GB/4.0 GB
+  [Failure   ] n=334                  | elapsed=60009               ms | exec=43                  ms | avgLen=1527     | speed(exec/elapsed)=  7735.4/5.6      ops/s
+              <50μs     : 32                   (  9.6%) [>20K     ops/s]
+              50-67μs   : 31                   (  9.3%) [15K-20K  ops/s]
+              67-100μs  : 108                  ( 32.3%) [10K-15K  ops/s]
+              100-133μs : 81                   ( 24.3%) [7.5K-10K ops/s]
+              133-200μs : 53                   ( 15.9%) [5K-7.5K  ops/s]
+              200-400μs : 20                   (  6.0%) [2.5K-5K  ops/s]
+              400μs-1ms : 7                    (  2.1%) [1K-2.5K  ops/s]
+              1-2ms     : 1                    (  0.3%) [500-1K   ops/s]
+              >2ms      : 1                    (  0.3%) [<500     ops/s]
+  [Success   ] n=54709                | elapsed=60010               ms | exec=59774               ms | avgLen=4492     | speed(exec/elapsed)=   915.3/911.7    ops/s
+              <50μs     : 0                    (  0.0%) [>20K     ops/s]
+              50-67μs   : 1                    (  0.0%) [15K-20K  ops/s]
+              67-100μs  : 17                   (  0.0%) [10K-15K  ops/s]
+              100-133μs : 22                   (  0.0%) [7.5K-10K ops/s]
+              133-200μs : 17                   (  0.0%) [5K-7.5K  ops/s]
+              200-400μs : 14                   (  0.0%) [2.5K-5K  ops/s]
+              400μs-1ms : 30266                ( 55.3%) [1K-2.5K  ops/s]
+              1-2ms     : 22840                ( 41.7%) [500-1K   ops/s]
+              >2ms      : 1532                 (  2.8%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=60011               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=60012               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:02:42.079841721 | PID=16146 | Uptime=PT1M10.005557665S
+------------------------------------------------------------
+TotalCalls=64824 | Failure=380(0.59%) Success=64444(99.41%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=928.87 ops/s | ElapsedSpeed=925.99 ops/s
+OS CPU[cores=32, systemUsage=4.7%, processUsage=4.6%, processCpuTime=138880ms]
+OS Memory(total=62.5 GB, free=54.3 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 892.2 MB | NonHeap(used): 60.5 MB | Free/Total: 3.1 GB/4.0 GB
+  [Failure   ] n=380                  | elapsed=70006               ms | exec=48                  ms | avgLen=1544     | speed(exec/elapsed)=  7902.6/5.4      ops/s
+              <50μs     : 32                   (  8.4%) [>20K     ops/s]
+              50-67μs   : 34                   (  8.9%) [15K-20K  ops/s]
+              67-100μs  : 128                  ( 33.7%) [10K-15K  ops/s]
+              100-133μs : 96                   ( 25.3%) [7.5K-10K ops/s]
+              133-200μs : 60                   ( 15.8%) [5K-7.5K  ops/s]
+              200-400μs : 21                   (  5.5%) [2.5K-5K  ops/s]
+              400μs-1ms : 7                    (  1.8%) [1K-2.5K  ops/s]
+              1-2ms     : 1                    (  0.3%) [500-1K   ops/s]
+              >2ms      : 1                    (  0.3%) [<500     ops/s]
+  [Success   ] n=64445                | elapsed=70007               ms | exec=69740               ms | avgLen=4533     | speed(exec/elapsed)=   924.1/920.6    ops/s
+              <50μs     : 0                    (  0.0%) [>20K     ops/s]
+              50-67μs   : 2                    (  0.0%) [15K-20K  ops/s]
+              67-100μs  : 29                   (  0.0%) [10K-15K  ops/s]
+              100-133μs : 27                   (  0.0%) [7.5K-10K ops/s]
+              133-200μs : 18                   (  0.0%) [5K-7.5K  ops/s]
+              200-400μs : 15                   (  0.0%) [2.5K-5K  ops/s]
+              400μs-1ms : 36647                ( 56.9%) [1K-2.5K  ops/s]
+              1-2ms     : 25974                ( 40.3%) [500-1K   ops/s]
+              >2ms      : 1733                 (  2.7%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=70007               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=70007               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:02:52.079424282 | PID=16146 | Uptime=PT1M20.005140769S
+------------------------------------------------------------
+TotalCalls=74526 | Failure=578(0.78%) Success=73948(99.22%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=934.17 ops/s | ElapsedSpeed=931.52 ops/s
+OS CPU[cores=32, systemUsage=4.2%, processUsage=4.1%, processCpuTime=152070ms]
+OS Memory(total=62.5 GB, free=54.3 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 2.4 GB | NonHeap(used): 60.2 MB | Free/Total: 1.6 GB/4.0 GB
+  [Failure   ] n=578                  | elapsed=80005               ms | exec=60                  ms | avgLen=1372     | speed(exec/elapsed)=  9567.4/7.2      ops/s
+              <50μs     : 142                  ( 24.6%) [>20K     ops/s]
+              50-67μs   : 60                   ( 10.4%) [15K-20K  ops/s]
+              67-100μs  : 161                  ( 27.9%) [10K-15K  ops/s]
+              100-133μs : 108                  ( 18.7%) [7.5K-10K ops/s]
+              133-200μs : 67                   ( 11.6%) [5K-7.5K  ops/s]
+              200-400μs : 31                   (  5.4%) [2.5K-5K  ops/s]
+              400μs-1ms : 7                    (  1.2%) [1K-2.5K  ops/s]
+              1-2ms     : 1                    (  0.2%) [500-1K   ops/s]
+              >2ms      : 1                    (  0.2%) [<500     ops/s]
+  [Success   ] n=73949                | elapsed=80006               ms | exec=79718               ms | avgLen=4614     | speed(exec/elapsed)=   927.6/924.3    ops/s
+              <50μs     : 197                  (  0.3%) [>20K     ops/s]
+              50-67μs   : 51                   (  0.1%) [15K-20K  ops/s]
+              67-100μs  : 77                   (  0.1%) [10K-15K  ops/s]
+              100-133μs : 32                   (  0.0%) [7.5K-10K ops/s]
+              133-200μs : 18                   (  0.0%) [5K-7.5K  ops/s]
+              200-400μs : 16                   (  0.0%) [2.5K-5K  ops/s]
+              400μs-1ms : 41361                ( 55.9%) [1K-2.5K  ops/s]
+              1-2ms     : 30302                ( 41.0%) [500-1K   ops/s]
+              >2ms      : 1895                 (  2.6%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=80007               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=80007               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------
+
+------------------------------------------------------------
+SqlTemplateMonitor (CACHE_ENABLED=false)| 2026-06-04T12:03:02.083270002 | PID=16146 | Uptime=PT1M30.009219131S
+------------------------------------------------------------
+TotalCalls=84198 | Failure=644(0.76%) Success=83554(99.24%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=937.92 ops/s | ElapsedSpeed=935.44 ops/s
+OS CPU[cores=32, systemUsage=4.3%, processUsage=4.3%, processCpuTime=165710ms]
+OS Memory(total=62.5 GB, free=54.3 GB) | Swap(total=8.0 GB, free=8.0 GB)
+JVM Heap(Xms/Xmx): 4.0 GB/4.0 GB | Heap(used): 1.6 GB | NonHeap(used): 60.6 MB | Free/Total: 2.3 GB/4.0 GB
+  [Failure   ] n=644                  | elapsed=90010               ms | exec=64                  ms | avgLen=1274     | speed(exec/elapsed)=  9986.7/7.2      ops/s
+              <50μs     : 172                  ( 26.7%) [>20K     ops/s]
+              50-67μs   : 66                   ( 10.2%) [15K-20K  ops/s]
+              67-100μs  : 181                  ( 28.1%) [10K-15K  ops/s]
+              100-133μs : 114                  ( 17.7%) [7.5K-10K ops/s]
+              133-200μs : 71                   ( 11.0%) [5K-7.5K  ops/s]
+              200-400μs : 31                   (  4.8%) [2.5K-5K  ops/s]
+              400μs-1ms : 7                    (  1.1%) [1K-2.5K  ops/s]
+              1-2ms     : 1                    (  0.2%) [500-1K   ops/s]
+              >2ms      : 1                    (  0.2%) [<500     ops/s]
+  [Success   ] n=83555                | elapsed=90010               ms | exec=89707               ms | avgLen=4630     | speed(exec/elapsed)=   931.4/928.3    ops/s
+              <50μs     : 197                  (  0.2%) [>20K     ops/s]
+              50-67μs   : 54                   (  0.1%) [15K-20K  ops/s]
+              67-100μs  : 96                   (  0.1%) [10K-15K  ops/s]
+              100-133μs : 32                   (  0.0%) [7.5K-10K ops/s]
+              133-200μs : 18                   (  0.0%) [5K-7.5K  ops/s]
+              200-400μs : 18                   (  0.0%) [2.5K-5K  ops/s]
+              400μs-1ms : 47246                ( 56.5%) [1K-2.5K  ops/s]
+              1-2ms     : 33813                ( 40.5%) [500-1K   ops/s]
+              >2ms      : 2081                 (  2.5%) [<500     ops/s]
+  [NonSupport] n=0                    | elapsed=90011               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+  [EXCEPTION ] n=0                    | elapsed=90011               ms | exec=0                   ms | avgLen=0        | speed(exec/elapsed)=     0.0/0.0      ops/s
+------------------------------------------------------------

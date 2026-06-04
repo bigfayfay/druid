@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST_NAME:localhost}:3306/${DB_NAME:test_sql_zbzq_20251125}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: Ankki_mySQL123
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# Performance test configuration - all can be overridden via -D flags
+# e.g., -Dperf.batch-size=2000 -Dperf.max-records=100000
+perf:
+  enabled: ${PERF_ENABLED:true}
+  batch-size: ${PERF_BATCH_SIZE:1000}
+  db-type: ${PERF_DB_TYPE:oracle}
+  warmup-batches: ${PERF_WARMUP_BATCHES:2}
+  max-records: ${PERF_MAX_RECORDS:10000000}
+  thread-count: ${PERF_THREAD_COUNT:1}
+  queue-capacity: ${PERF_QUEUE_CAPACITY:20}
+  write-failed-file: ${PERF_WRITE_FAILED_FILE:false}
+  write-result-db: ${PERF_WRITE_RESULT_DB:false}
+  start-id: ${PERF_START_ID:0}
+
+# 日志配置统一由 logback-spring.xml 管理

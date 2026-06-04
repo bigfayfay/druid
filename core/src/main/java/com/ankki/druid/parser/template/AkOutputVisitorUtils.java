@@ -10,8 +10,8 @@ import com.alibaba.druid.util.StringUtils;
 import com.ankki.druid.parser.AkDruidSqlParser;
 import com.ankki.druid.parser.AkSqlParserStatusEnum;
 import com.ankki.druid.parser.bind.ParameterValuesFormatter;
-import com.ankki.druid.parser.template.AkTemplateResult;
 import com.ankki.druid.parser.utils.AkDruidUtil;
+
 import java.util.ArrayList;
 
 public class AkOutputVisitorUtils {
