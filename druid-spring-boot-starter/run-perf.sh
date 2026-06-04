@@ -18,9 +18,9 @@ PERF_WARMUP_BATCHES=2
 
 # fetch param
 PERF_DB_TYPE=oracle
-# 20260101_start_1780243200
+# 20260601_at_1780243200
 # 20260101_at_1767196800
-# 20260101_at_1735660800
+# 20250101_at_1735660800
 PERF_START_ID=1780243200100
 PERF_BATCH_SIZE=2500
 PERF_QUEUE_CAPACITY=18
@@ -76,7 +76,7 @@ JVM_OPTS="$JVM_OPTS -XX:+UseG1GC"
 #JVM_OPTS="$JVM_OPTS -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=50m"
 
 # JAR 路径（相对或绝对）
-JAR_FILE="druid-spring-boot-starter-1.2.27.jar"
+JAR_FILE="druid-spring-boot-starter-1.2.28.jar"
 
 # ============== 解析命令行参数 ==============
 while [ $# -gt 0 ]; do

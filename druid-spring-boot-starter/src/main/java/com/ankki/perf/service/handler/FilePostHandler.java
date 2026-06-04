@@ -1,6 +1,7 @@
 package com.ankki.perf.service.handler;
 
 import cn.hutool.core.util.StrUtil;
+import com.ankki.druid.parser.AkDruidSqlParser;
 import com.ankki.druid.parser.AkSqlParserStatusEnum;
 import com.ankki.perf.entity.db.SqlTemplateRes;
 import com.ankki.perf.service.PostHandler;
@@ -13,6 +14,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 文件后处理器 - 将失败的SQL记录写入文件
@@ -28,6 +33,18 @@ public class FilePostHandler implements PostHandler {
     private final BufferedWriter writer;
     private final Path filePath;
     private final int threadIdx;
+
+    private static final int LRU_CAPACITY = 20_000;
+
+    private final Set<String> seenMd5 = Collections.newSetFromMap(
+            Collections.synchronizedMap(new LinkedHashMap<String, Boolean>(LRU_CAPACITY, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+                    return size() > LRU_CAPACITY;
+                }
+            })
+    );
+
 
     /**
      * 创建文件后处理器
@@ -61,6 +78,17 @@ public class FilePostHandler implements PostHandler {
         if (status == AkSqlParserStatusEnum.Success || status == AkSqlParserStatusEnum.NonSupport) {
             return;
         }
+        // MD5 去重：相同 SQL 只写入一次
+        try {
+            // 设置原始 SQL 的 MD5，用于后处理去重
+            record.setSqlMd5(AkDruidSqlParser.generateMD5(record.getOperSentence()));
+        } catch (Exception ignored) {
+        }
+
+        String md5 = record.getSqlMd5();
+        if (md5 != null && !seenMd5.add(md5)) {
+            return; // LRU 中已存在，跳过（重复 SQL）
+        }
 
         // 只写入失败的记录
         if (record.getFailReason() != null) {
@@ -68,14 +96,17 @@ public class FilePostHandler implements PostHandler {
                 writer.write(
                         String.join("|||",
                         ""+record.getId(),
-                        record.getOperType(),
-                        StrUtil.emptyIfNull(record.getFailReason()),
+                                ""+record.getDbType(),
+                                record.getStatus(),
+                                record.getOperType(),
+                                StrUtil.emptyIfNull(record.getSqlMd5()),
+                                StrUtil.emptyIfNull(record.getFailReason()),
                         record.getOperSentence())
                 );
                 // 注意：这里需要原始SQL，但SqlTemplateRes中没有保存，可能需要调整
                 // 暂时留空或者从其他地方获取
                 writer.newLine();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("Failed to write to file for thread-{}, path: {}", threadIdx, filePath, e);
             }
         }
@@ -88,7 +119,7 @@ public class FilePostHandler implements PostHandler {
             try {
                 writer.flush();
                 log.debug("FilePostHandler flushed for thread-{}", threadIdx);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("Failed to flush file for thread-{}, path: {}", threadIdx, filePath, e);
             }
         }
@@ -102,7 +133,7 @@ public class FilePostHandler implements PostHandler {
             try {
                 writer.close();
                 log.debug("FilePostHandler closed for thread-{}, file: {}", threadIdx, filePath);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("Failed to close file for thread-{}, path: {}", threadIdx, filePath, e);
             }
         }
