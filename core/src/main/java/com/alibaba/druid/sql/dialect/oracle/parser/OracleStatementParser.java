@@ -1490,6 +1490,27 @@ public class OracleStatementParser extends SQLStatementParser {
         } else if (lexer.identifierEquals(FnvHash.Constants.PACKAGE)) {
             lexer.reset(savePoint);
             return parseAlterPackage();
+        } else if (lexer.identifierEquals("SYSTEM")) {
+            lexer.nextToken();
+
+            OracleAlterSystemStatement stmt = new OracleAlterSystemStatement();
+
+            if (lexer.identifierEquals("KILL")) {
+                lexer.nextToken();
+                stmt.setAction("KILL");
+
+                if (lexer.token() == Token.SESSION) {
+                    lexer.nextToken();
+                    // Parse session identifier: 'sid,serial#'
+                    stmt.setSessionId(this.exprParser.expr());
+                } else {
+                    throw new ParserException("TODO : " + lexer.info());
+                }
+            } else {
+                throw new ParserException("TODO : " + lexer.info());
+            }
+
+            return stmt;
         }
 
         throw new ParserException("TODO : " + lexer.info());
