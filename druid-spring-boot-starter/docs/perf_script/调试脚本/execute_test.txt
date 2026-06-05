@@ -1,0 +1,10 @@
+# 在服务器上依次执行以下命令:
+
+# 1. 解码 jar 包 (如果使用了 base64 上传)
+base64 -d druid-ak-1.2.27-jar-with-dependencies.jar.b64 > druid-ak-1.2.27-jar-with-dependencies.jar
+
+# 2. 运行 JMH 基准测试
+java -cp /root/druid-ak-1.2.27-jar-with-dependencies.jar org.openjdk.jmh.Main ".*CustomerOutputVisitorUtilsBenchmark.*" 2>&1 | tee /root/jmh_results.txt
+
+# 3. 查看结果摘要
+tail -30 /root/jmh_results.txt

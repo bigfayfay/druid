@@ -1,0 +1,20 @@
+# 本地执行命令 (Git Bash / PowerShell):
+
+# 1. 上传 jar 包到服务器
+scp druid-ak-1.2.27-jar-with-dependencies.jar root@172.19.4.41:/root/
+# 密码: @1fw#2soc$3vpn
+
+# 2. 连接到服务器
+ssh root@172.19.4.41
+# 密码: @1fw#2soc$3vpn
+
+# 3. 在服务器上运行测试 (复制 execute_test.txt 中的命令)
+# 或者直接运行:
+java -cp /root/druid-ak-1.2.27-jar-with-dependencies.jar org.openjdk.jmh.Main ".*CustomerOutputVisitorUtilsBenchmark.*"
+
+# 4. 下载测试结果
+exit
+scp root@172.19.4.41:/root/jmh_results.txt ./
+
+# 5. 生成报告
+python generate_report.py --input jmh_results.txt --output report.html

@@ -1,0 +1,91 @@
+{
+  "total_sqls": 391,
+  "unique_tables": 20,
+  "normalized_tables": 20,
+  "top_tables": {
+    "xfer_stat_20260512": 99,
+    "ud.dr_gsm_20260512": 89,
+    "BILL_RATE_STAT_20260512": 59,
+    "ud.dr_ggprs_20260512": 30,
+    "ud.dr_sms_20260512": 24,
+    "DR_SMS_20260512": 15,
+    "ud.dr_gsm_centrex_20260512": 15,
+    "DR_GGPRS_20260512": 12,
+    "DR_GSM_CENTREX_20260512": 11,
+    "DR_GSM_20260512": 7,
+    "ud.de_stat_20260512": 6,
+    "LD_STAT_20260512": 5,
+    "ud.rat_stat_20260512": 3,
+    "DE_STAT_20260512": 3,
+    "ud.xfer_stat_20260512": 2,
+    "ud.ld_stat_20260512": 2,
+    "ud.s2x_stat_20260512": 2,
+    "RAT_STAT_20260512": 2,
+    "S2X_STAT_20260512": 2,
+    "ud.bill_rate_stat_20260512": 1
+  },
+  "top_normalized_tables": {
+    "xfer_stat": 99,
+    "ud.dr_gsm": 89,
+    "BILL_RATE_STAT": 59,
+    "ud.dr_ggprs": 30,
+    "ud.dr_sms": 24,
+    "DR_SMS": 15,
+    "ud.dr_gsm_centrex": 15,
+    "DR_GGPRS": 12,
+    "DR_GSM_CENTREX": 11,
+    "DR_GSM": 7,
+    "ud.de_stat": 6,
+    "LD_STAT": 5,
+    "ud.rat_stat": 3,
+    "DE_STAT": 3,
+    "ud.xfer_stat": 2,
+    "ud.ld_stat": 2,
+    "ud.s2x_stat": 2,
+    "RAT_STAT": 2,
+    "S2X_STAT": 2,
+    "ud.bill_rate_stat": 1
+  },
+  "templates": {
+    "xfer_stat": {
+      "count": 99,
+      "template": "BEGIN;INSERT INTO xfer_stat_?\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ??, ?, ?\t, ?, ??, ??, ?, ?);INSERT I"
+    },
+    "ud.dr_gsm": {
+      "count": 89,
+      "template": "INSERT INTO ud.dr_gsm_? a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, call_ref"
+    },
+    "BILL_RATE_STAT": {
+      "count": 59,
+      "template": "BEGIN;INSERT INTO BILL_RATE_STAT_? a\t(ORIGINAL_FILE, STARTTIME, DATE_TIME, PROC_INFO, EARLIST\t, ENDTIME, ERRORSTAT, FILESTAT, FILTERSTAT, LATEST\t, READFILENAME, NOWRITECOUNT, WRITEOKXDRCOUNT, READFILE"
+    },
+    "ud.dr_ggprs": {
+      "count": 30,
+      "template": "INSERT INTO ud.dr_ggprs_? a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, original_"
+    },
+    "ud.dr_sms": {
+      "count": 24,
+      "template": "INSERT INTO ud.dr_sms_? a\t(dr_type, service_id, imsi, imei, notify_type\t, user_number, opp_number, opp_number_type, start_time, stop_time\t, final_state, record_type, bill_indicate, moc_bill_type, mtc_"
+    },
+    "DR_SMS": {
+      "count": 15,
+      "template": "BEGIN;INSERT INTO DR_SMS_? a\t(HPLMN?, ADDUP_RES_USING_VAL, CALL_REFNUM, IMEI, MOC_BILL_TYPE\t, MTC_BILL_TYPE, OPERATOR_CODE, OPP_GATEWAY, RESERVE?, RESERVE?\t, RESERVE?, RESERVE?, RESERVE_FIELDS, SEQUEN"
+    },
+    "ud.dr_gsm_centrex": {
+      "count": 15,
+      "template": "INSERT INTO ud.dr_gsm_centrex_? a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, "
+    },
+    "DR_GGPRS": {
+      "count": 12,
+      "template": "INSERT INTO DR_GGPRS_? a\t(SYSTEM_TYPE, APN_OI, APN_NI, VPLMN?, VPLMN?\t, OPER_ID, TERMINAL_TYPE, VPLMN?, CHARGING_CHARACTERISTICS, PARTIAL_TYPE_INDICATOR\t, RESERVE_FIELDS, CHARGE_CONVERTED, SGSN_ID, VA"
+    },
+    "DR_GSM_CENTREX": {
+      "count": 11,
+      "template": "BEGIN;INSERT INTO DR_GSM_CENTREX_? a\t(VPLMN?, VPLMN?, OPP_HPLMN?, OPP_VPLMN?, USER_NUMBER\t, OPP_NUMBER, SEQUENCE_ID, MSRN, SCP_ID, VC_NUMBER\t, MSC_ID, RESERVE?, CELL_CODE, LAC_ID, DR_TYPE_DESC\t, CELL_"
+    },
+    "DR_GSM": {
+      "count": 7,
+      "template": "INSERT INTO DR_GSM_? a\t(VPLMN?, VPLMN?, OPP_HPLMN?, OPP_VPLMN?, USER_NUMBER\t, OPP_NUMBER, SEQUENCE_ID, MSRN, SCP_ID, VC_NUMBER\t, MSC_ID, RESERVE?, CELL_CODE, LAC_ID, DR_TYPE_DESC\t, CELL_ID, IN_TRUNKID"
+    }
+  }
+}
