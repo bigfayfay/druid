@@ -61,4 +61,10 @@ public class PerfTestConfig {
      */
     @Value("${perf.max-consecutive-empty:15}")
     private int maxConsecutiveEmpty;
+
+    /**
+     * DB批量刷新阈值：缓冲区达到该数量后执行批量写入
+     */
+    @Value("${perf.flush-threshold:180}")
+    private int flushThreshold;
 }

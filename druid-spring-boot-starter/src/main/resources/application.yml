@@ -57,5 +57,6 @@ perf:
   start-id: ${PERF_START_ID:0}
   data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:audit}
   max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
+  flush-threshold: ${PERF_FLUSH_THRESHOLD:180}
 
 # 日志配置统一由 logback-spring.xml 管理

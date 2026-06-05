@@ -29,6 +29,8 @@ public class SqlTemplateRes {
      */
     private String status;
 
+    private Integer dbType;
+
     /**
      * 耗时(ns)
      */
@@ -38,7 +40,12 @@ public class SqlTemplateRes {
      * SQL长度
      */
     private Integer sqlLen;
+    /**
+     * SQL md5
+     */
+    private String sqlMd5;
 
+    private Integer failNum;
     /**
      * 失败原因
      */

@@ -21,6 +21,7 @@ PERF_WRITE_FAILED_FILE=false
 PERF_WRITE_RESULT_DB=false
 PERF_START_ID=0
 PERF_MAX_CONSECUTIVE_EMPTY=15
+PERF_FLUSH_THRESHOLD=180
 
 # VmOptions 监控参数（可选，不设置则使用 Java 代码内置默认值）
 MONITOR="true"
@@ -69,6 +70,8 @@ while [ $# -gt 0 ]; do
             PERF_START_ID="$2"; shift 2 ;;
         --max-consecutive-empty)
             PERF_MAX_CONSECUTIVE_EMPTY="$2"; shift 2 ;;
+        --flush-threshold)
+            PERF_FLUSH_THRESHOLD="$2"; shift 2 ;;
         --db-name)
             DB_NAME="$2"; shift 2 ;;
         --db-host)
@@ -110,6 +113,7 @@ while [ $# -gt 0 ]; do
             echo "  --no-write-db               禁用结果写DB (default)"
             echo "  --start-id <n>              起始ID, 用于断点续跑 (default: 0)"
             echo "  --max-consecutive-empty <n> 连续空批次阈值 (default: 15)"
+            echo "  --flush-threshold <n>       DB批量刷新阈值 (default: 180)"
             echo "  --db-name <name>            数据库名 (default: test_sql_zbzq_20251125)"
             echo "  --db-host <host>            MySQL主机地址 (default: 172.19.4.41)"
             echo "  --db-host-ck <host>         ClickHouse主机地址 (default: 172.19.4.41)"
@@ -161,6 +165,7 @@ echo " perf.write-file:  $PERF_WRITE_FAILED_FILE"
 echo " perf.write-db:    $PERF_WRITE_RESULT_DB"
 echo " perf.start-id:    $PERF_START_ID"
 echo " perf.max-empty:   $PERF_MAX_CONSECUTIVE_EMPTY"
+echo " perf.flush-thr:   $PERF_FLUSH_THRESHOLD"
 [ -n "$MONITOR" ]               && echo " monitor:          $MONITOR"
 [ -n "$MONITOR_DIR" ]           && echo " monitor.dir:      $MONITOR_DIR"
 [ -n "$MONITOR_INTERVAL" ]      && echo " monitor.interval: $MONITOR_INTERVAL"
@@ -187,6 +192,7 @@ JAVA_CMD="java $JVM_OPTS \
     -Dperf.write-result-db=$PERF_WRITE_RESULT_DB \
     -Dperf.start-id=$PERF_START_ID \
     -Dperf.max-consecutive-empty=$PERF_MAX_CONSECUTIVE_EMPTY \
+    -Dperf.flush-threshold=$PERF_FLUSH_THRESHOLD \
     $VM_OPTS \
     -DDB_HOST_NAME=$DB_HOST_NAME \
     -DDB_HOST_CK=$DB_HOST_CK \

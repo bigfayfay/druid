@@ -1,5 +1,6 @@
 package com.ankki.perf.service.fetch;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.ankki.perf.config.PerfTestConfig;
 import com.ankki.perf.entity.SqlTemplateQueryRequest;
 import com.ankki.perf.entity.SqlTypeBO;
@@ -14,6 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -37,30 +39,44 @@ public class AuditDataFetcher implements DataFetcherService {
 
     @Override
     public List<SqlTypeBO> fetchBatch(SqlTemplateQueryRequest request) {
-        LambdaQueryWrapper<AuditBaseDO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(AuditBaseDO::getId,
-                AuditBaseDO::getHappenTime,
-                AuditBaseDO::getDbType,
-                AuditBaseDO::getOperType,
-                AuditBaseDO::getOperSentence
-        );
-        wrapper.eq(AuditBaseDO::getTenantId, "0");
-        // 起始 ID 条件
-        Long auditId = initSecIfNeed(request.getStartId());
-        if (auditId != null) {
-            Long auditIdSec = AuditUtils.auditIdSec(auditId);
-            wrapper.gt(AuditBaseDO::getId, auditId);
-            wrapper.ge(AuditBaseDO::getHappenTime, AuditUtils.sec2DateTimeStr(auditIdSec - PRE_MISTAKE_SECONDS));
-            wrapper.le(AuditBaseDO::getHappenTime, AuditUtils.sec2DateTimeStr(auditIdSec + PST_MISTAKE_SECONDS));
+        List<AuditBaseDO> dataList = null;
+        try {
+            LambdaQueryWrapper<AuditBaseDO> wrapper = new LambdaQueryWrapper<>();
+            wrapper.select(AuditBaseDO::getId,
+                    AuditBaseDO::getHappenTime,
+                    AuditBaseDO::getDbType,
+                    AuditBaseDO::getOperType,
+                    AuditBaseDO::getOperSentence
+            );
+            wrapper.eq(AuditBaseDO::getTenantId, "0");
+            // 起始 ID 条件
+            Long auditId = initSecIfNeed(request.getStartId());
+            if (auditId != null) {
+                Long auditIdSec = AuditUtils.auditIdSec(auditId);
+                wrapper.gt(AuditBaseDO::getId, auditId);
+                wrapper.ge(AuditBaseDO::getHappenTime, AuditUtils.sec2DateTimeStr(auditIdSec - PRE_MISTAKE_SECONDS));
+                wrapper.le(AuditBaseDO::getHappenTime, AuditUtils.sec2DateTimeStr(auditIdSec + PST_MISTAKE_SECONDS));
 
+            }
+
+            // 排序
+            wrapper.orderByAsc(AuditBaseDO::getHappenTime, AuditBaseDO::getId);
+
+            // 分页限制
+            wrapper.last("LIMIT " + request.getBatchSize());
+            dataList = auditBaseMapper.selectList(wrapper);
+            if (CollectionUtil.isEmpty(dataList) && auditId != null) {
+                // 前10位(秒)+PST_MISTAKE_SECONDS，后面位数保留，组合为新起始ID（时间窗口前移）
+                String idStr = String.valueOf(auditId);
+                long toNextIdSec = AuditUtils.auditIdSec(auditId) + PST_MISTAKE_SECONDS;
+                String tailPart = idStr.substring(10);
+                request.setStartId(Long.valueOf(("" + toNextIdSec) + tailPart));
+            }
+        } catch (Exception e) {
+            log.error("[fetch_error]", e);
+            dataList = new ArrayList<>();
         }
 
-        // 排序
-        wrapper.orderByAsc(AuditBaseDO::getHappenTime, AuditBaseDO::getId);
-
-        // 分页限制
-        wrapper.last("LIMIT " + request.getBatchSize());
-        List<AuditBaseDO> dataList = auditBaseMapper.selectList(wrapper);
         return dataList.stream().map(SqlTypeConvertor.INSTANCE::mapToEntity).collect(Collectors.toList());
     }
 

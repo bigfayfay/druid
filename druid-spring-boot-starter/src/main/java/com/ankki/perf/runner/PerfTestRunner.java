@@ -1,6 +1,7 @@
 package com.ankki.perf.runner;
 
 import cn.hutool.core.io.FileUtil;
+import com.ankki.druid.parser.AkDruidSqlParser;
 import com.ankki.druid.parser.AkSqlParserStatusEnum;
 import com.ankki.druid.parser.CustomerOutputVisitorUtils;
 import com.ankki.druid.parser.config.VmOptions;
@@ -73,20 +74,21 @@ public class PerfTestRunner implements CommandLineRunner {
         final int maxConsecutiveEmpty = config.getMaxConsecutiveEmpty();
         Thread producer = new Thread(() -> {
             long lastId = config.getStartId();
+            SqlTemplateQueryRequest fetchRequest = new SqlTemplateQueryRequest(lastId, config.getBatchSize());
             int batchNumber = 0;
             long produced = 0;
             int consecutiveEmpty = 0;
             try {
                 while (true) {
                     long dbStart = System.nanoTime();
-                    List<SqlTypeBO> records = fetchBatch(lastId, config.getBatchSize());
+                    List<SqlTypeBO> records = dataFetcherService.fetchBatch(fetchRequest);
                     long dbElapsed = System.nanoTime() - dbStart;
                     stats.recordDbQuery(dbElapsed);
 
                     if (records.isEmpty()) {
                         consecutiveEmpty++;
                         if (consecutiveEmpty >= maxConsecutiveEmpty) {
-                            log.info("[APP] Producer: no more records after {} consecutive empty batches. Total fetched: {}",
+                            log.info("[APP] [Producer_e]: [no_more] records after {} consecutive empty batches. Total fetched: {}",
                                     consecutiveEmpty, produced);
                             break;
                         }
@@ -100,16 +102,17 @@ public class PerfTestRunner implements CommandLineRunner {
                     queue.put(records);
 
                     lastId = records.get(records.size() - 1).getId();
+                    fetchRequest.setStartId(lastId);
                     produced += records.size();
 
-                    if (batchNumber % 100 == 0) {
-                        log.info("[APP] Producer progress: batch={}, fetched={}, lastId={}, queueSize={}",
+                    if (batchNumber % 1000_000 == 0) {
+                        log.info("[APP] Producer: batch={}, fetched={}, lastId={}, queueSize={}",
                                 batchNumber, produced, lastId, queue.size());
                     }
 
                     // 仅通过 maxRecords 配置限制来终止，不再依赖 records.size() 判断
                     if (config.getMaxRecords() > 0 && produced >= config.getMaxRecords()) {
-                        log.info("[APP] Producer: reached maxRecords limit. fetched={}", produced);
+                        log.info("[APP] [Producer_e]: to_exit, reached maxRecords limit. fetched={}", produced);
                         break;
                     }
                 }
@@ -191,9 +194,11 @@ public class PerfTestRunner implements CommandLineRunner {
                             // 构建结果记录
                             SqlTemplateRes res = new SqlTemplateRes();
                             res.setId(record.getId());
-                            res.setOperType(record.getOperType());
                             res.setStatus(sqlRes[0]);
                             res.setCostNs(costNanos);
+                            res.setDbType(record.getDbType());
+                            res.setOperType(record.getOperType());
+                            res.setOperSentence(record.getOperSentence());
                             res.setSqlLen(record.getOperSentence() != null ? record.getOperSentence().length() : 0);
                             if (AkSqlParserStatusEnum.Success != statusEnum) {
                                 res.setFailReason(sqlRes.length > 4 ? sqlRes[4] : null);
@@ -288,8 +293,7 @@ public class PerfTestRunner implements CommandLineRunner {
     }
 
 
-    private List<SqlTypeBO> fetchBatch(long lastId, int batchSize) {
-        SqlTemplateQueryRequest request = new SqlTemplateQueryRequest(lastId, batchSize);
+    private List<SqlTypeBO> fetchBatch(SqlTemplateQueryRequest request) {
         return dataFetcherService.fetchBatch(request);
     }
 
@@ -303,8 +307,8 @@ public class PerfTestRunner implements CommandLineRunner {
         long totalFailure = 0;
         
         log.info("[APP] \n========== 全局性能统计汇总 ==========");
-        log.info("[APP] {:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12}", 
-                "线程", "调用次数", "总耗时(ms)", "成功数", "失败数", "速度(rec/s)");
+        log.info("[APP] {}", String.format("%-15s | %10s | %12s | %12s | %10s | %12s", 
+                "线程", "调用次数", "总耗时(ms)", "成功数", "失败数", "速度(rec/s)"));
         log.info("[APP] {}", createSeparatorLine());
         
         for (ThreadStats ts : threadStatsList) {
@@ -319,14 +323,17 @@ public class PerfTestRunner implements CommandLineRunner {
             totalParseNanos += parseNanos;
             totalSuccess += success;
             totalFailure += failure;
-            
-            log.info("[APP] {:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12.2f}",
+            /*
+             * SLF4J 只认 {}，格式化指令被忽略
+             * 先用 String.format 格式化，再传给 SLF4J
+             */
+            log.info("[APP] {}", String.format("%-15s | %10d | %12.2f | %12d | %10d | %12.2f",
                     "Thread-" + ts.getThreadId(), 
                     calls, 
                     parseNanos / 1_000_000.0,
                     success, 
                     failure,
-                    speed);
+                    speed));
         }
         
         log.info("[APP] {}", createSeparatorLine());
@@ -336,16 +343,16 @@ public class PerfTestRunner implements CommandLineRunner {
         double globalSpeed = globalElapsedMs > 0 ? (totalCalls * 1000.0 / globalElapsedMs) : 0;
         double avgParseMs = totalCalls > 0 ? (totalParseNanos / 1_000_000.0 / totalCalls) : 0;
         
-        log.info("[APP] {:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12.2f}",
+        log.info("[APP] {}", String.format("%-15s | %10d | %12.2f | %12d | %10d | %12.2f",
                 "全局汇总", 
                 totalCalls, 
                 totalParseNanos / 1_000_000.0,
                 totalSuccess, 
                 totalFailure,
-                globalSpeed);
-        log.info("[APP] 全局平均解析耗时: {:.3f} ms", avgParseMs);
+                globalSpeed));
+        log.info("[APP] 全局平均解析耗时: {} ms", String.format("%.3f", avgParseMs));
         log.info("[APP] 全局Wall Time: {} ms", globalElapsedMs);
-        log.info("[APP] 全局吞吐量: {:.2f} rec/s", globalSpeed);
+        log.info("[APP] 全局吞吐量: {} rec/s", String.format("%.2f", globalSpeed));
         log.info("[APP] ========================================\n");
     }
 
@@ -364,7 +371,7 @@ public class PerfTestRunner implements CommandLineRunner {
      * 单个线程的性能统计
      */
     private static class ThreadStats {
-        private static final long PRINT_INTERVAL = 10000; // 每处理1万条打印一次
+        private static final long PRINT_INTERVAL = 250000; // 每处理10万条打印一次
 
         private final int threadId;
         private final LongAdder totalCalls = new LongAdder();
@@ -439,8 +446,8 @@ public class PerfTestRunner implements CommandLineRunner {
             log.info("[APP]   调用次数: {}", calls);
             log.info("[APP]   成功/失败: {} / {}", getSuccessCount(), getFailureCount());
             log.info("[APP]   总耗时: {} ms", elapsedMs);
-            log.info("[APP]   平均耗时: {:.3f} ms", avgMs);
-            log.info("[APP]   处理速度: {:.2f} rec/s", speed);
+            log.info("[APP]   平均耗时: {} ms", String.format("%.3f", avgMs));
+            log.info("[APP]   处理速度: {} rec/s", String.format("%.2f", speed));
         }
     }
 }
