@@ -218,7 +218,9 @@ public class PerfTestRunner implements CommandLineRunner {
                             }
                         }
                         totalProcessed.add(batch.size());
-                        threadStats.printIfMilestone();
+                        if (threadStats.printIfMilestone()) {
+                            postHandlers.forEach(PostHandler::flush);
+                        }
 
                     }
                 } catch (InterruptedException e) {
@@ -390,12 +392,14 @@ public class PerfTestRunner implements CommandLineRunner {
         /**
          * 里程碑跨越法：当处理量跨过下一个万级时自动打印统计
          */
-        public void printIfMilestone() {
+        public boolean printIfMilestone() {
             long currentMilestone = getTotalCalls() / PRINT_INTERVAL;
             if (currentMilestone > lastPrintMilestone) {
                 lastPrintMilestone = currentMilestone;
                 printStats();
+                return true;
             }
+            return false;
         }
 
         public void recordParse(long elapsedNanos, boolean success) {

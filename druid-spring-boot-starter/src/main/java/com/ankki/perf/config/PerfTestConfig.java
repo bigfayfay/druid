@@ -67,4 +67,10 @@ public class PerfTestConfig {
      */
     @Value("${perf.flush-threshold:180}")
     private int flushThreshold;
+
+    /**
+     * 仅处理错误记录：开启后只有解析失败的记录才写入DB（跳过 Success 状态）
+     */
+    @Value("${perf.error-only:false}")
+    private boolean errorOnly;
 }

@@ -11,32 +11,33 @@
 
 # ============== 默认参数 ==============
 PERF_ENABLED=true
-PERF_BATCH_SIZE=1000
+PERF_BATCH_SIZE=2500
 PERF_DB_TYPE=oracle
 PERF_WARMUP_BATCHES=2
-PERF_MAX_RECORDS=10000000
-PERF_THREAD_COUNT=1
+PERF_MAX_RECORDS=200010000
+PERF_THREAD_COUNT=4
 PERF_QUEUE_CAPACITY=20
 PERF_WRITE_FAILED_FILE=false
-PERF_WRITE_RESULT_DB=false
+PERF_WRITE_RESULT_DB=true
 PERF_START_ID=0
-PERF_MAX_CONSECUTIVE_EMPTY=15
-PERF_FLUSH_THRESHOLD=180
+PERF_MAX_CONSECUTIVE_EMPTY=36000
+PERF_FLUSH_THRESHOLD=10
+PERF_ERROR_ONLY=false
 
 # VmOptions 监控参数（可选，不设置则使用 Java 代码内置默认值）
 MONITOR="true"
 MONITOR_DIR=""
-MONITOR_INTERVAL=""
+MONITOR_INTERVAL="10"
 CACHE_USE=""
 
 # 数据库配置
-DB_HOST_NAME=172.19.4.41
-DB_HOST_CK=172.19.4.41
-DB_NAME=test_sql_zbzq_20251125
+DB_HOST_NAME=localhost
+DB_HOST_CK=localhost
+DB_NAME=bs_audit
 DB_USER=sroot
 
 # JVM 参数
-JVM_OPTS="-Xms1g -Xmx4g -XX:+UseG1GC"
+JVM_OPTS="-Xms1g -Xmx2g -XX:+UseG1GC"
 
 # JAR 路径（相对或绝对）
 JAR_FILE="druid-spring-boot-starter-1.2.27.jar"
@@ -72,6 +73,10 @@ while [ $# -gt 0 ]; do
             PERF_MAX_CONSECUTIVE_EMPTY="$2"; shift 2 ;;
         --flush-threshold)
             PERF_FLUSH_THRESHOLD="$2"; shift 2 ;;
+        --error-only)
+            PERF_ERROR_ONLY=true; shift ;;
+        --no-error-only)
+            PERF_ERROR_ONLY=false; shift ;;
         --db-name)
             DB_NAME="$2"; shift 2 ;;
         --db-host)
@@ -114,6 +119,8 @@ while [ $# -gt 0 ]; do
             echo "  --start-id <n>              起始ID, 用于断点续跑 (default: 0)"
             echo "  --max-consecutive-empty <n> 连续空批次阈值 (default: 15)"
             echo "  --flush-threshold <n>       DB批量刷新阈值 (default: 180)"
+            echo "  --error-only                仅处理错误记录写入DB"
+            echo "  --no-error-only             处理所有记录 (default)"
             echo "  --db-name <name>            数据库名 (default: test_sql_zbzq_20251125)"
             echo "  --db-host <host>            MySQL主机地址 (default: 172.19.4.41)"
             echo "  --db-host-ck <host>         ClickHouse主机地址 (default: 172.19.4.41)"
@@ -166,6 +173,7 @@ echo " perf.write-db:    $PERF_WRITE_RESULT_DB"
 echo " perf.start-id:    $PERF_START_ID"
 echo " perf.max-empty:   $PERF_MAX_CONSECUTIVE_EMPTY"
 echo " perf.flush-thr:   $PERF_FLUSH_THRESHOLD"
+echo " perf.error-only:  $PERF_ERROR_ONLY"
 [ -n "$MONITOR" ]               && echo " monitor:          $MONITOR"
 [ -n "$MONITOR_DIR" ]           && echo " monitor.dir:      $MONITOR_DIR"
 [ -n "$MONITOR_INTERVAL" ]      && echo " monitor.interval: $MONITOR_INTERVAL"
@@ -193,6 +201,7 @@ JAVA_CMD="java $JVM_OPTS \
     -Dperf.start-id=$PERF_START_ID \
     -Dperf.max-consecutive-empty=$PERF_MAX_CONSECUTIVE_EMPTY \
     -Dperf.flush-threshold=$PERF_FLUSH_THRESHOLD \
+    -Dperf.error-only=$PERF_ERROR_ONLY \
     $VM_OPTS \
     -DDB_HOST_NAME=$DB_HOST_NAME \
     -DDB_HOST_CK=$DB_HOST_CK \

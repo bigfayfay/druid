@@ -1,6 +1,7 @@
 package com.ankki.perf.service.handler;
 
 import com.ankki.druid.parser.AkDruidSqlParser;
+import com.ankki.druid.parser.AkSqlParserStatusEnum;
 import com.ankki.perf.entity.db.SqlTemplateRes;
 import com.ankki.perf.mapper.SqlTemplateResMapper;
 import com.ankki.perf.service.PostHandler;
@@ -43,6 +44,7 @@ public class DataBasePostHandler implements PostHandler {
     private SqlSessionFactory sqlSessionFactory;
 
     private final int flushThreshold;
+    private final boolean errorOnly;
     private final List<SqlTemplateRes> buffer;
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -60,8 +62,10 @@ public class DataBasePostHandler implements PostHandler {
             })
     );
 
-    public DataBasePostHandler(@Value("${perf.flush-threshold:180}") int flushThreshold) {
+    public DataBasePostHandler(@Value("${perf.flush-threshold:180}") int flushThreshold,
+                               @Value("${perf.error-only:false}") boolean errorOnly) {
         this.flushThreshold = flushThreshold;
+        this.errorOnly = errorOnly;
         this.buffer = new ArrayList<>(flushThreshold);
     }
 
@@ -71,6 +75,15 @@ public class DataBasePostHandler implements PostHandler {
      */
     @Override
     public void addRecord(SqlTemplateRes record) {
+
+        // error-only 模式：仅处理解析失败的记录，跳过 Success
+        if (errorOnly) {
+            AkSqlParserStatusEnum status = AkSqlParserStatusEnum.fastValueOf(record.getStatus());
+            if (status == AkSqlParserStatusEnum.Success) {
+                return;
+            }
+        }
+
         // MD5 去重：相同 SQL 只写入一次
         // 设置原始 SQL 的 MD5，用于后处理去重
         try {
