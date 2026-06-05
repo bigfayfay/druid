@@ -12,11 +12,11 @@ public interface SqlTemplateResMapper extends BaseMapper<SqlTemplateRes> {
     /**
      * INSERT ON DUPLICATE KEY UPDATE：id 不存在则 insert，存在则 update
      */
-    @Insert("INSERT INTO sql_template_res (id, status, cost_ms, sql_len, fail_reason, remark) " +
-            "VALUES (#{r.id}, #{r.status}, #{r.costMs}, #{r.sqlLen}, #{r.failReason}, #{r.remark}) " +
+    @Insert("INSERT INTO sql_template_res (id, status, cost_ns, sql_len, fail_reason, remark) " +
+            "VALUES (#{r.id}, #{r.status}, #{r.costNs}, #{r.sqlLen}, #{r.failReason}, #{r.remark}) " +
             "ON DUPLICATE KEY UPDATE " +
             "status = VALUES(status), " +
-            "cost_ms = VALUES(cost_ms), " +
+            "cost_ns = VALUES(cost_ns), " +
             "sql_len = VALUES(sql_len), " +
             "fail_reason = VALUES(fail_reason), " +
             "remark = VALUES(remark)")

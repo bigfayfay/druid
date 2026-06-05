@@ -1,7 +1,7 @@
 CREATE TABLE bs_audit.sql_template_res  (
     `id`       bigint(20) unsigned NOT NULL COMMENT '主键',
     `status`   varchar(12) NOT NULL ,
-    `cost_ms`  bigint,
+    `cost_ns`  bigint,
     `sql_len`  int,
     `fail_reason` text ,
     `remark` varchar(255),

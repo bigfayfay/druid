@@ -8,7 +8,7 @@ spring:
       strict: false
       datasource:
         mysql:
-          url: jdbc:mysql://${DB_HOST_NAME:localhost}:3306/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          url: jdbc:mysql://${DB_HOST_NAME:172.19.4.41}:3306/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
           username: ${DB_USER:root}
           password: Ankki_mySQL123
           driver-class-name: com.mysql.cj.jdbc.Driver
@@ -23,7 +23,7 @@ spring:
             testOnReturn: true
             poolPreparedStatements: true
         ck:
-          url: jdbc:clickhouse://localhost:8123/bs_audit?socket_timeout=6000000
+          url: jdbc:clickhouse://${DB_HOST_CK:172.19.4.41}:8123/bs_audit?socket_timeout=6000000
           username: root
           password: Ankki_cK123
           driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
@@ -46,15 +46,16 @@ mybatis-plus:
 # e.g., -Dperf.batch-size=2000 -Dperf.max-records=100000
 perf:
   enabled: ${PERF_ENABLED:true}
-  batch-size: ${PERF_BATCH_SIZE:1000}
+  batch-size: ${PERF_BATCH_SIZE:2500}
   db-type: ${PERF_DB_TYPE:oracle}
   warmup-batches: ${PERF_WARMUP_BATCHES:2}
   max-records: ${PERF_MAX_RECORDS:10000000}
   thread-count: ${PERF_THREAD_COUNT:1}
-  queue-capacity: ${PERF_QUEUE_CAPACITY:20}
+  queue-capacity: ${PERF_QUEUE_CAPACITY:15}
   write-failed-file: ${PERF_WRITE_FAILED_FILE:false}
   write-result-db: ${PERF_WRITE_RESULT_DB:false}
   start-id: ${PERF_START_ID:0}
   data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:audit}
+  max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
 
 # 日志配置统一由 logback-spring.xml 管理

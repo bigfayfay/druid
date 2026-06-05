@@ -20,6 +20,7 @@ PERF_QUEUE_CAPACITY=20
 PERF_WRITE_FAILED_FILE=false
 PERF_WRITE_RESULT_DB=false
 PERF_START_ID=0
+PERF_MAX_CONSECUTIVE_EMPTY=15
 
 # VmOptions 监控参数（可选，不设置则使用 Java 代码内置默认值）
 MONITOR="true"
@@ -29,6 +30,7 @@ CACHE_USE=""
 
 # 数据库配置
 DB_HOST_NAME=172.19.4.41
+DB_HOST_CK=172.19.4.41
 DB_NAME=test_sql_zbzq_20251125
 DB_USER=sroot
 
@@ -65,10 +67,14 @@ while [ $# -gt 0 ]; do
             PERF_WRITE_RESULT_DB=false; shift ;;
         --start-id)
             PERF_START_ID="$2"; shift 2 ;;
+        --max-consecutive-empty)
+            PERF_MAX_CONSECUTIVE_EMPTY="$2"; shift 2 ;;
         --db-name)
             DB_NAME="$2"; shift 2 ;;
         --db-host)
             DB_HOST_NAME="$2"; shift 2 ;;
+        --db-host-ck)
+            DB_HOST_CK="$2"; shift 2 ;;
         --db-user)
             DB_USER="$2"; shift 2 ;;
         --jvm)
@@ -103,8 +109,10 @@ while [ $# -gt 0 ]; do
             echo "  --write-db                  启用结果写DB"
             echo "  --no-write-db               禁用结果写DB (default)"
             echo "  --start-id <n>              起始ID, 用于断点续跑 (default: 0)"
+            echo "  --max-consecutive-empty <n> 连续空批次阈值 (default: 15)"
             echo "  --db-name <name>            数据库名 (default: test_sql_zbzq_20251125)"
-            echo "  --db-host <host>            数据库主机地址 (default: 172.19.4.41)"
+            echo "  --db-host <host>            MySQL主机地址 (default: 172.19.4.41)"
+            echo "  --db-host-ck <host>         ClickHouse主机地址 (default: 172.19.4.41)"
             echo "  --db-user <user>            数据库用户名 (default: sroot)"
             echo "  --jvm '<opts>'              JVM参数 (default: -Xms1g -Xmx4g -XX:+UseG1GC)"
             echo "  --jar <path>                JAR文件路径"
@@ -139,6 +147,7 @@ echo "========================================"
 echo " JAR:              $JAR_FILE"
 echo " JVM:              $JVM_OPTS"
 echo " DB_HOST_NAME:     $DB_HOST_NAME"
+echo " DB_HOST_CK:       $DB_HOST_CK"
 echo " DB_NAME:          $DB_NAME"
 echo " DB_USER:          $DB_USER"
 echo " perf.enabled:     $PERF_ENABLED"
@@ -151,6 +160,7 @@ echo " perf.queue-cap:   $PERF_QUEUE_CAPACITY"
 echo " perf.write-file:  $PERF_WRITE_FAILED_FILE"
 echo " perf.write-db:    $PERF_WRITE_RESULT_DB"
 echo " perf.start-id:    $PERF_START_ID"
+echo " perf.max-empty:   $PERF_MAX_CONSECUTIVE_EMPTY"
 [ -n "$MONITOR" ]               && echo " monitor:          $MONITOR"
 [ -n "$MONITOR_DIR" ]           && echo " monitor.dir:      $MONITOR_DIR"
 [ -n "$MONITOR_INTERVAL" ]      && echo " monitor.interval: $MONITOR_INTERVAL"
@@ -176,8 +186,10 @@ JAVA_CMD="java $JVM_OPTS \
     -Dperf.write-failed-file=$PERF_WRITE_FAILED_FILE \
     -Dperf.write-result-db=$PERF_WRITE_RESULT_DB \
     -Dperf.start-id=$PERF_START_ID \
+    -Dperf.max-consecutive-empty=$PERF_MAX_CONSECUTIVE_EMPTY \
     $VM_OPTS \
     -DDB_HOST_NAME=$DB_HOST_NAME \
+    -DDB_HOST_CK=$DB_HOST_CK \
     -DDB_NAME=$DB_NAME \
     -DDB_USER=$DB_USER \
     -jar $JAR_FILE"

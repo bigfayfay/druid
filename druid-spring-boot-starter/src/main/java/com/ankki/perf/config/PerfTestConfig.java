@@ -56,4 +56,9 @@ public class PerfTestConfig {
     @Value("${perf.data-fetcher-type:sql-template}")
     private String dataFetcherType;
 
+    /**
+     * 连续空批次阈值：连续多次返回空结果才认为数据已耗尽（处理时间窗口间隙问题）
+     */
+    @Value("${perf.max-consecutive-empty:15}")
+    private int maxConsecutiveEmpty;
 }

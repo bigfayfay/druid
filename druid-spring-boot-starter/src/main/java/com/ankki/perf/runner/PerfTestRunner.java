@@ -48,13 +48,13 @@ public class PerfTestRunner implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (!config.isEnabled()) {
-            log.info("Performance test is disabled. Set -Dperf.enabled=true to enable.");
+            log.info("[APP] Performance test is disabled. Set -Dperf.enabled=true to enable.");
             return;
         }
 
         int threadCount = config.getThreadCount();
-        log.info("=== Druid SQL Parser Multi-Thread Performance Test ===");
-        log.info("Config: {}", config.toString());
+        log.info("[APP] === Druid SQL Parser Multi-Thread Performance Test ===");
+        log.info("[APP] Config: {}", config.toString());
 
         PerfStats stats = new PerfStats();
 
@@ -63,15 +63,18 @@ public class PerfTestRunner implements CommandLineRunner {
 
         // 用 BlockingQueue 实现生产者-消费者模式
         BlockingQueue<List<SqlTypeBO>> queue = new LinkedBlockingQueue<>(config.getQueueCapacity());
-        AtomicLong totalProcessed = new AtomicLong(0);
+        LongAdder totalProcessed = new LongAdder();
 
         stats.markStart();
 
         // --- 生产者线程：从 DB 读取数据放入队列 ---
+        // 连续空批次阈值：连续多次返回空结果才认为数据已耗尽（处理时间窗口间隙问题）
+        final int maxConsecutiveEmpty = config.getMaxConsecutiveEmpty();
         Thread producer = new Thread(() -> {
             long lastId = config.getStartId();
             int batchNumber = 0;
             long produced = 0;
+            int consecutiveEmpty = 0;
             try {
                 while (true) {
                     long dbStart = System.nanoTime();
@@ -80,10 +83,18 @@ public class PerfTestRunner implements CommandLineRunner {
                     stats.recordDbQuery(dbElapsed);
 
                     if (records.isEmpty()) {
-                        log.info("Producer: no more records. Total fetched: {}", produced);
-                        break;
+                        consecutiveEmpty++;
+                        if (consecutiveEmpty >= maxConsecutiveEmpty) {
+                            log.info("[APP] Producer: no more records after {} consecutive empty batches. Total fetched: {}",
+                                    consecutiveEmpty, produced);
+                            break;
+                        }
+                        log.debug("[APP] Producer: empty batch #{}, retrying...", consecutiveEmpty);
+                        continue;
                     }
 
+                    // 获取到数据，重置空批次计数
+                    consecutiveEmpty = 0;
                     batchNumber++;
                     queue.put(records);
 
@@ -91,13 +102,13 @@ public class PerfTestRunner implements CommandLineRunner {
                     produced += records.size();
 
                     if (batchNumber % 100 == 0) {
-                        log.info("Producer progress: batch={}, fetched={}, lastId={}, queueSize={}",
+                        log.info("[APP] Producer progress: batch={}, fetched={}, lastId={}, queueSize={}",
                                 batchNumber, produced, lastId, queue.size());
                     }
 
-                    if (records.size() < config.getBatchSize()
-                            || (config.getMaxRecords() > 0 && produced >= config.getMaxRecords())) {
-                        log.info("Producer: reached limit. fetched={}", produced);
+                    // 仅通过 maxRecords 配置限制来终止，不再依赖 records.size() 判断
+                    if (config.getMaxRecords() > 0 && produced >= config.getMaxRecords()) {
+                        log.info("[APP] Producer: reached maxRecords limit. fetched={}", produced);
                         break;
                     }
                 }
@@ -149,7 +160,7 @@ public class PerfTestRunner implements CommandLineRunner {
                     filePostHandler = new FilePostHandler(path, threadIdx, true);
                     threadPostHandlers.add(filePostHandler);
                 } catch (IOException e) {
-                    log.error("Failed to create FilePostHandler for thread-{}", threadIdx, e);
+                    log.error("[APP] Failed to create FilePostHandler for thread-{}", threadIdx, e);
                 }
             }
             
@@ -172,13 +183,13 @@ public class PerfTestRunner implements CommandLineRunner {
                             long parseStart = System.nanoTime();
                             String[] sqlRes = getSqlTemplate_v3(record.getOperSentence(), record.getDbType());
                             long costNanos = System.nanoTime() - parseStart;
-//                            long costMs = (costNanos) / 1_000_000;
 
                             AkSqlParserStatusEnum statusEnum = AkSqlParserStatusEnum.fastValueOf(sqlRes[0]);
 
                             // 构建结果记录
                             SqlTemplateRes res = new SqlTemplateRes();
                             res.setId(record.getId());
+                            res.setOperType(record.getOperType());
                             res.setStatus(sqlRes[0]);
                             res.setCostNs(costNanos);
                             res.setSqlLen(record.getOperSentence() != null ? record.getOperSentence().length() : 0);
@@ -199,7 +210,9 @@ public class PerfTestRunner implements CommandLineRunner {
                                 }
                             }
                         }
-                        totalProcessed.addAndGet(batch.size());
+                        totalProcessed.add(batch.size());
+                        threadStats.printIfMilestone();
+
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -223,7 +236,7 @@ public class PerfTestRunner implements CommandLineRunner {
             try {
                 f.get();
             } catch (InterruptedException | ExecutionException e) {
-                log.error("Consumer error", e);
+                log.error("[APP] Consumer error", e);
             }
         }
         consumers.shutdown();
@@ -232,13 +245,13 @@ public class PerfTestRunner implements CommandLineRunner {
         postHandlers.forEach(PostHandler::flush);
 
         stats.markEnd();
-        log.info("Total processed records: {}", totalProcessed.get());
+        log.info("[APP] Total processed records: {}", totalProcessed.sum());
         log.info(stats.generateReport());
         
         // 打印全局汇总统计
         printGlobalStats(threadStatsList, stats);
         
-        log.error("exit ...");
+        log.error("[APP] exit ...");
         System.exit(0);
     }
 
@@ -287,10 +300,10 @@ public class PerfTestRunner implements CommandLineRunner {
         long totalSuccess = 0;
         long totalFailure = 0;
         
-        log.info("\n========== 全局性能统计汇总 ==========");
-        log.info("{:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12}", 
+        log.info("[APP] \n========== 全局性能统计汇总 ==========");
+        log.info("[APP] {:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12}", 
                 "线程", "调用次数", "总耗时(ms)", "成功数", "失败数", "速度(rec/s)");
-        log.info("{}", createSeparatorLine());
+        log.info("[APP] {}", createSeparatorLine());
         
         for (ThreadStats ts : threadStatsList) {
             long calls = ts.getTotalCalls();
@@ -305,7 +318,7 @@ public class PerfTestRunner implements CommandLineRunner {
             totalSuccess += success;
             totalFailure += failure;
             
-            log.info("{:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12.2f}",
+            log.info("[APP] {:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12.2f}",
                     "Thread-" + ts.getThreadId(), 
                     calls, 
                     parseNanos / 1_000_000.0,
@@ -314,24 +327,24 @@ public class PerfTestRunner implements CommandLineRunner {
                     speed);
         }
         
-        log.info("{}", createSeparatorLine());
+        log.info("[APP] {}", createSeparatorLine());
         
         // 全局汇总
         long globalElapsedMs = globalStats.getEndTimeMillis() - globalStats.getStartTimeMillis();
         double globalSpeed = globalElapsedMs > 0 ? (totalCalls * 1000.0 / globalElapsedMs) : 0;
         double avgParseMs = totalCalls > 0 ? (totalParseNanos / 1_000_000.0 / totalCalls) : 0;
         
-        log.info("{:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12.2f}",
+        log.info("[APP] {:<15} | {:>10} | {:>12} | {:>12} | {:>10} | {:>12.2f}",
                 "全局汇总", 
                 totalCalls, 
                 totalParseNanos / 1_000_000.0,
                 totalSuccess, 
                 totalFailure,
                 globalSpeed);
-        log.info("全局平均解析耗时: {:.3f} ms", avgParseMs);
-        log.info("全局Wall Time: {} ms", globalElapsedMs);
-        log.info("全局吞吐量: {:.2f} rec/s", globalSpeed);
-        log.info("========================================\n");
+        log.info("[APP] 全局平均解析耗时: {:.3f} ms", avgParseMs);
+        log.info("[APP] 全局Wall Time: {} ms", globalElapsedMs);
+        log.info("[APP] 全局吞吐量: {:.2f} rec/s", globalSpeed);
+        log.info("[APP] ========================================\n");
     }
 
     /**
@@ -349,6 +362,8 @@ public class PerfTestRunner implements CommandLineRunner {
      * 单个线程的性能统计
      */
     private static class ThreadStats {
+        private static final long PRINT_INTERVAL = 10000; // 每处理1万条打印一次
+
         private final int threadId;
         private final LongAdder totalCalls = new LongAdder();
         private final LongAdder successCount = new LongAdder();
@@ -356,10 +371,22 @@ public class PerfTestRunner implements CommandLineRunner {
         private final LongAdder totalParseNanos = new LongAdder();
         private final long startTime;
         private volatile long endTime;
+        private long lastPrintMilestone = 0; // 里程碑：上次打印时的万级编号
 
         public ThreadStats(int threadId) {
             this.threadId = threadId;
             this.startTime = System.currentTimeMillis();
+        }
+
+        /**
+         * 里程碑跨越法：当处理量跨过下一个万级时自动打印统计
+         */
+        public void printIfMilestone() {
+            long currentMilestone = getTotalCalls() / PRINT_INTERVAL;
+            if (currentMilestone > lastPrintMilestone) {
+                lastPrintMilestone = currentMilestone;
+                printStats();
+            }
         }
 
         public void recordParse(long elapsedNanos, boolean success) {
@@ -406,12 +433,12 @@ public class PerfTestRunner implements CommandLineRunner {
             double speed = elapsedMs > 0 ? (calls * 1000.0 / elapsedMs) : 0;
             double avgMs = calls > 0 ? (getTotalParseNanos() / 1_000_000.0 / calls) : 0;
             
-            log.info("\n[Thread-{}] 性能统计:", threadId);
-            log.info("  调用次数: {}", calls);
-            log.info("  成功/失败: {} / {}", getSuccessCount(), getFailureCount());
-            log.info("  总耗时: {} ms", elapsedMs);
-            log.info("  平均耗时: {:.3f} ms", avgMs);
-            log.info("  处理速度: {:.2f} rec/s", speed);
+            log.info("[APP] \n[Thread-{}] 性能统计:", threadId);
+            log.info("[APP]   调用次数: {}", calls);
+            log.info("[APP]   成功/失败: {} / {}", getSuccessCount(), getFailureCount());
+            log.info("[APP]   总耗时: {} ms", elapsedMs);
+            log.info("[APP]   平均耗时: {:.3f} ms", avgMs);
+            log.info("[APP]   处理速度: {:.2f} rec/s", speed);
         }
     }
 }

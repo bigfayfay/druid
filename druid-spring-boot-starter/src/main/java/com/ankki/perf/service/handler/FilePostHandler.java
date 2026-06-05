@@ -1,5 +1,7 @@
 package com.ankki.perf.service.handler;
 
+import cn.hutool.core.util.StrUtil;
+import com.ankki.druid.parser.AkSqlParserStatusEnum;
 import com.ankki.perf.entity.db.SqlTemplateRes;
 import com.ankki.perf.service.PostHandler;
 import com.ankki.perf.util.PerfUtil;
@@ -79,10 +81,11 @@ public class FilePostHandler implements PostHandler {
             return;
         }
 
+        AkSqlParserStatusEnum status = AkSqlParserStatusEnum.fastValueOf(record.getStatus());
         // 只写入失败的记录
-        if (record.getFailReason() != null) {
+        if (status != AkSqlParserStatusEnum.Success) {
             try {
-                writer.write(record.getId() + "|||" + record.getFailReason() + "|||" + originalSql);
+                writer.write(record.getId() + "|||" + record.getOperType()+ "|||" + StrUtil.emptyIfNull(record.getFailReason()) + "|||" + originalSql);
                 writer.newLine();
             } catch (IOException e) {
                 log.error("Failed to write to file for thread-{}, path: {}", threadIdx, filePath, e);

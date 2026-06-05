@@ -29,4 +29,6 @@ public class AuditBaseDO {
     @TableField("protectObjectName")
     private String protectObjectName;
 
+    @TableField("tenantId")
+    private String tenantId;
 }
