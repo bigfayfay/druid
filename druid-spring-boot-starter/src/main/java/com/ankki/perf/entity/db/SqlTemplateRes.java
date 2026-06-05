@@ -16,8 +16,13 @@ public class SqlTemplateRes {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @TableField(exist = false)
+
     private String operType;
+
+    /**
+     * 操作句子
+     */
+    private String operSentence;
 
     /**
      * 状态

@@ -40,6 +40,21 @@ public class AkOutputVisitorUtils {
         result.setAkDbTypeId(akDbTypeId);
         try {
             String sqlTemplate;
+
+            // 单词特殊处理：如 login/logout 等短命令，直接作为模板
+            // 先判长度（廉价），短串才 trim，然后判断是否单词
+            if (sql.length() <= 15) {
+                String trimmed = sql.charAt(0) <= ' ' || sql.charAt(sql.length() - 1) <= ' '
+                        ? sql.trim() : sql;
+                if (trimmed.indexOf(' ') < 0) {
+                    sqlTemplate = trimmed;
+                    result.setMd5(AkDruidSqlParser.generateMD5(sqlTemplate));
+                    result.setTemplate(sqlTemplate);
+                    result.setStatus(AkSqlParserStatusEnum.Success);
+                    return result;
+                }
+            }
+
             int bindIdx = sql.lastIndexOf(BIND_APPEND);
             if (bindIdx > 0) {
                 sqlTemplate = SQLUtils.format(sql.substring(0, bindIdx), dbType);

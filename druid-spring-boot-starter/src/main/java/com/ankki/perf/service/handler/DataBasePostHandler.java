@@ -2,6 +2,7 @@ package com.ankki.perf.service.handler;
 
 import com.ankki.perf.entity.db.SqlTemplateRes;
 import com.ankki.perf.mapper.SqlTemplateResMapper;
+import com.ankki.perf.service.PostHandler;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -21,9 +22,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * 多个消费者线程可并发调用 {@link #addRecord(SqlTemplateRes)}。
  */
 @Service
-public class PostHandler implements com.ankki.perf.service.PostHandler {
+public class DataBasePostHandler implements PostHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(PostHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(DataBasePostHandler.class);
 
     /** 默认批量刷新阈值 */
     private static final int DEFAULT_FLUSH_THRESHOLD = 180;
@@ -38,11 +39,11 @@ public class PostHandler implements com.ankki.perf.service.PostHandler {
     private final List<SqlTemplateRes> buffer;
     private final ReentrantLock lock = new ReentrantLock();
 
-    public PostHandler() {
+    public DataBasePostHandler() {
         this(DEFAULT_FLUSH_THRESHOLD);
     }
 
-    public PostHandler(int flushThreshold) {
+    public DataBasePostHandler(int flushThreshold) {
         this.flushThreshold = flushThreshold;
         this.buffer = new ArrayList<>(flushThreshold + 16);
     }

@@ -2,6 +2,7 @@ package com.ankki.perf.runner;
 
 import cn.hutool.core.io.FileUtil;
 import com.ankki.druid.parser.AkSqlParserStatusEnum;
+import com.ankki.druid.parser.CustomerOutputVisitorUtils;
 import com.ankki.druid.parser.config.VmOptions;
 import com.ankki.druid.parser.template.AkLightweightCachedOutputVisitorUtils;
 import com.ankki.druid.parser.template.AkOutputVisitorUtils;
@@ -181,7 +182,8 @@ public class PerfTestRunner implements CommandLineRunner {
                         }
                         for (SqlTypeBO record : batch) {
                             long parseStart = System.nanoTime();
-                            String[] sqlRes = getSqlTemplate_v3(record.getOperSentence(), record.getDbType());
+                            String[] sqlRes = CustomerOutputVisitorUtils.getSqlTemplate_v2(record.getOperSentence(), record.getDbType());
+//                            String[] sqlRes = getSqlTemplate_v3(record.getOperSentence(), record.getDbType());
                             long costNanos = System.nanoTime() - parseStart;
 
                             AkSqlParserStatusEnum statusEnum = AkSqlParserStatusEnum.fastValueOf(sqlRes[0]);

@@ -3,6 +3,8 @@ CREATE TABLE bs_audit.sql_template_res  (
     `status`   varchar(12) NOT NULL ,
     `cost_ns`  bigint,
     `sql_len`  int,
+    `oper_type` varchar(20)  ,
+    `oper_sentence` text ,
     `fail_reason` text ,
     `remark` varchar(255),
     PRIMARY KEY (`id`),

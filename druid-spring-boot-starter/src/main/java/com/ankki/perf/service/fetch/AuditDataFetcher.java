@@ -33,7 +33,7 @@ public class AuditDataFetcher implements DataFetcherService {
     private AuditBaseMapper auditBaseMapper;
 
     private static final Long PRE_MISTAKE_SECONDS = 5L;
-    private static final Long PST_MISTAKE_SECONDS = 30L;
+    private static final Long PST_MISTAKE_SECONDS = 60L;
 
     @Override
     public List<SqlTypeBO> fetchBatch(SqlTemplateQueryRequest request) {

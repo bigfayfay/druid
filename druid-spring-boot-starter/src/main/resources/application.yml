@@ -52,8 +52,8 @@ perf:
   max-records: ${PERF_MAX_RECORDS:10000000}
   thread-count: ${PERF_THREAD_COUNT:1}
   queue-capacity: ${PERF_QUEUE_CAPACITY:15}
-  write-failed-file: ${PERF_WRITE_FAILED_FILE:false}
-  write-result-db: ${PERF_WRITE_RESULT_DB:false}
+  write-failed-file: ${PERF_WRITE_FAILED_FILE:true}
+  write-result-db: ${PERF_WRITE_RESULT_DB:true}
   start-id: ${PERF_START_ID:0}
   data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:audit}
   max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
