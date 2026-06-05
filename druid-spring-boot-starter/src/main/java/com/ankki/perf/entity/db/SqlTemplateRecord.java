@@ -1,4 +1,4 @@
-package com.ankki.perf.entity;
+package com.ankki.perf.entity.db;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -26,8 +26,8 @@ public class SqlTemplateRecord {
 
     private String template;
 
-    @TableField("create_time")
-    private Long createTime;
+//    @TableField("create_time")
+//    private Long createTime;
 //
 //    @TableField("tenantId")
 //    private String tenantId;

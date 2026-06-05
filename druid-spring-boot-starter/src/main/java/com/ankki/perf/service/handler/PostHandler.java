@@ -1,6 +1,6 @@
-package com.ankki.perf.service;
+package com.ankki.perf.service.handler;
 
-import com.ankki.perf.entity.SqlTemplateRes;
+import com.ankki.perf.entity.db.SqlTemplateRes;
 import com.ankki.perf.mapper.SqlTemplateResMapper;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -21,9 +21,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * 多个消费者线程可并发调用 {@link #addRecord(SqlTemplateRes)}。
  */
 @Service
-public class SqlTemplateResService {
+public class PostHandler implements com.ankki.perf.service.PostHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(SqlTemplateResService.class);
+    private static final Logger log = LoggerFactory.getLogger(PostHandler.class);
 
     /** 默认批量刷新阈值 */
     private static final int DEFAULT_FLUSH_THRESHOLD = 180;
@@ -38,11 +38,11 @@ public class SqlTemplateResService {
     private final List<SqlTemplateRes> buffer;
     private final ReentrantLock lock = new ReentrantLock();
 
-    public SqlTemplateResService() {
+    public PostHandler() {
         this(DEFAULT_FLUSH_THRESHOLD);
     }
 
-    public SqlTemplateResService(int flushThreshold) {
+    public PostHandler(int flushThreshold) {
         this.flushThreshold = flushThreshold;
         this.buffer = new ArrayList<>(flushThreshold + 16);
     }
@@ -50,6 +50,7 @@ public class SqlTemplateResService {
     /**
      * 添加一条记录到缓冲区，达到阈值自动批量刷新
      */
+    @Override
     public void addRecord(SqlTemplateRes record) {
         List<SqlTemplateRes> toFlush = null;
         lock.lock();
@@ -90,6 +91,7 @@ public class SqlTemplateResService {
     /**
      * 强制刷新缓冲区中的剩余记录（任务结束时调用）
      */
+    @Override
     public void flush() {
         List<SqlTemplateRes> toFlush = null;
         lock.lock();

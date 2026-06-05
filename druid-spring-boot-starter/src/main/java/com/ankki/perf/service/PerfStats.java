@@ -41,6 +41,14 @@ public class PerfStats {
         this.endTimeMillis = System.currentTimeMillis();
     }
 
+    public long getStartTimeMillis() {
+        return startTimeMillis;
+    }
+
+    public long getEndTimeMillis() {
+        return endTimeMillis;
+    }
+
     public void recordSuccess(long elapsedNanos) {
         totalCount.increment();
         successCount.increment();

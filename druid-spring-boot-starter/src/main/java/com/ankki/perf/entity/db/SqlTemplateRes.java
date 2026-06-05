@@ -1,4 +1,4 @@
-package com.ankki.perf.entity;
+package com.ankki.perf.entity.db;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -21,9 +21,9 @@ public class SqlTemplateRes {
     private String status;
 
     /**
-     * 耗时(ms)
+     * 耗时(ns)
      */
-    private Long costMs;
+    private Long costNs;
 
     /**
      * SQL长度

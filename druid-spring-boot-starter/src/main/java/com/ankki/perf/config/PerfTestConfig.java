@@ -50,4 +50,10 @@ public class PerfTestConfig {
     @Value("${perf.write-result-db:true}")
     private boolean writeResultDb;
 
+    /**
+     * 数据获取器类型：sql-template 或 audit
+     */
+    @Value("${perf.data-fetcher-type:sql-template}")
+    private String dataFetcherType;
+
 }
