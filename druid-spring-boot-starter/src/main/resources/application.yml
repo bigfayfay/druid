@@ -6,6 +6,7 @@ spring:
     dynamic:
       primary: mysql
       strict: false
+      lazy: true
       datasource:
         mysql:
           url: jdbc:mysql://${DB_HOST:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
