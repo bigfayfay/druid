@@ -13,8 +13,6 @@ public class PerfStats {
     private final LongAdder successCount = new LongAdder();
     private final LongAdder failureCount = new LongAdder();
     private final LongAdder totalParseNanos = new LongAdder();
-    private final AtomicLong maxParseNanos = new AtomicLong(0);
-    private final AtomicLong minParseNanos = new AtomicLong(Long.MAX_VALUE);
 
     // 用于计算百分位数的直方图桶（微秒级别）
     // 0-100us, 100-500us, 500us-1ms, 1-5ms, 5-10ms, 10-50ms, 50-100ms, 100-500ms, 500ms-1s, >1s
@@ -53,8 +51,6 @@ public class PerfStats {
         totalCount.increment();
         successCount.increment();
         totalParseNanos.add(elapsedNanos);
-        updateMax(elapsedNanos);
-        updateMin(elapsedNanos);
         recordHistogram(elapsedNanos);
     }
 
@@ -62,32 +58,12 @@ public class PerfStats {
         totalCount.increment();
         failureCount.increment();
         totalParseNanos.add(elapsedNanos);
-        updateMax(elapsedNanos);
-        updateMin(elapsedNanos);
         recordHistogram(elapsedNanos);
     }
 
     public void recordDbQuery(long elapsedNanos) {
         totalDbQueryNanos.add(elapsedNanos);
         dbQueryCount.increment();
-    }
-
-    private void updateMax(long value) {
-        long current;
-        do {
-            current = maxParseNanos.get();
-            if (value <= current) {
-                return;
-            }
-        } while (!maxParseNanos.compareAndSet(current, value));
-    }
-
-    private void updateMin(long value) {
-        long current;
-        do {
-            current = minParseNanos.get();
-            if (value >= current) return;
-        } while (!minParseNanos.compareAndSet(current, value));
     }
 
     private void recordHistogram(long nanos) {
@@ -111,9 +87,6 @@ public class PerfStats {
         long success = successCount.sum();
         long failure = failureCount.sum();
         long totalNanos = totalParseNanos.sum();
-        long maxNanos = maxParseNanos.get();
-        long minNanosVal = minParseNanos.get();
-        if (minNanosVal == Long.MAX_VALUE) minNanosVal = 0;
 
         long wallTimeMs = endTimeMillis - startTimeMillis;
         double tps = wallTimeMs > 0 ? (total * 1000.0 / wallTimeMs) : 0;
@@ -138,8 +111,6 @@ public class PerfStats {
         sb.append("╠══════════════════════════════════════════════════════════════╣\n");
         sb.append("║ Parse Latency                                              ║\n");
         sb.append(String.format("║   Avg               : %,18.3f ms              ║%n", avgNanos / 1_000_000.0));
-        sb.append(String.format("║   Min               : %,18.3f ms              ║%n", minNanosVal / 1_000_000.0));
-        sb.append(String.format("║   Max               : %,18.3f ms              ║%n", maxNanos / 1_000_000.0));
         sb.append("╠══════════════════════════════════════════════════════════════╣\n");
         sb.append("║ DB Query Stats                                             ║\n");
         sb.append(String.format("║   Total Queries     : %,15d                   ║%n", dbQueries));

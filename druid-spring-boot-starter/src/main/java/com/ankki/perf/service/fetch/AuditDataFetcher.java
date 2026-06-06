@@ -48,7 +48,7 @@ public class AuditDataFetcher implements DataFetcherService {
                     AuditBaseDO::getOperType,
                     AuditBaseDO::getOperSentence
             );
-            wrapper.eq(AuditBaseDO::getTenantId, "0");
+            wrapper.eq(AuditBaseDO::getTenantId, config.getTenantId());
             // 起始 ID 条件
             Long auditId = initSecIfNeed(request.getStartId());
             if (auditId != null) {

@@ -79,7 +79,7 @@ public class DataBasePostHandler implements PostHandler {
         // error-only 模式：仅处理解析失败的记录，跳过 Success
         if (errorOnly) {
             AkSqlParserStatusEnum status = AkSqlParserStatusEnum.fastValueOf(record.getStatus());
-            if (status == AkSqlParserStatusEnum.Success) {
+            if (status == AkSqlParserStatusEnum.Success || status == AkSqlParserStatusEnum.NonSupport) {
                 return;
             }
         }

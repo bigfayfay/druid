@@ -10,19 +10,29 @@
 #
 
 # ============== 默认参数 ==============
+# perf param
 PERF_ENABLED=true
-PERF_BATCH_SIZE=2500
-PERF_DB_TYPE=oracle
-PERF_WARMUP_BATCHES=2
-PERF_MAX_RECORDS=200010000
+# thread_parse_nums
 PERF_THREAD_COUNT=4
-PERF_QUEUE_CAPACITY=20
+PERF_WARMUP_BATCHES=2
+
+# fetch param
+PERF_DB_TYPE=oracle
+# 20260101_start_1780243200
+# 20260101_at_1767196800
+# 20260101_at_1735660800
+PERF_START_ID=1780243200100
+PERF_BATCH_SIZE=2500
+PERF_QUEUE_CAPACITY=18
+PERF_MAX_RECORDS=500010000
+PERF_MAX_CONSECUTIVE_EMPTY=3600
+PERF_TENANT_ID=0
+
+# post handle
 PERF_WRITE_FAILED_FILE=false
 PERF_WRITE_RESULT_DB=true
-PERF_START_ID=0
-PERF_MAX_CONSECUTIVE_EMPTY=36000
 PERF_FLUSH_THRESHOLD=10
-PERF_ERROR_ONLY=false
+PERF_ERROR_ONLY=true
 
 # VmOptions 监控参数（可选，不设置则使用 Java 代码内置默认值）
 MONITOR="true"
@@ -34,6 +44,7 @@ CACHE_USE=""
 DB_HOST_NAME=localhost
 DB_HOST_CK=localhost
 DB_NAME=bs_audit
+DB_PORT=3306
 DB_USER=sroot
 
 # JVM 参数
@@ -77,8 +88,12 @@ while [ $# -gt 0 ]; do
             PERF_ERROR_ONLY=true; shift ;;
         --no-error-only)
             PERF_ERROR_ONLY=false; shift ;;
+        --tenant-id)
+            PERF_TENANT_ID="$2"; shift 2 ;;
         --db-name)
             DB_NAME="$2"; shift 2 ;;
+        --db-port)
+            DB_PORT="$2"; shift 2 ;;
         --db-host)
             DB_HOST_NAME="$2"; shift 2 ;;
         --db-host-ck)
@@ -160,6 +175,7 @@ echo " JVM:              $JVM_OPTS"
 echo " DB_HOST_NAME:     $DB_HOST_NAME"
 echo " DB_HOST_CK:       $DB_HOST_CK"
 echo " DB_NAME:          $DB_NAME"
+echo " DB_PORT:          $DB_PORT"
 echo " DB_USER:          $DB_USER"
 echo " perf.enabled:     $PERF_ENABLED"
 echo " perf.batch-size:  $PERF_BATCH_SIZE"
@@ -174,6 +190,7 @@ echo " perf.start-id:    $PERF_START_ID"
 echo " perf.max-empty:   $PERF_MAX_CONSECUTIVE_EMPTY"
 echo " perf.flush-thr:   $PERF_FLUSH_THRESHOLD"
 echo " perf.error-only:  $PERF_ERROR_ONLY"
+echo " perf.tenant-id:   $PERF_TENANT_ID"
 [ -n "$MONITOR" ]               && echo " monitor:          $MONITOR"
 [ -n "$MONITOR_DIR" ]           && echo " monitor.dir:      $MONITOR_DIR"
 [ -n "$MONITOR_INTERVAL" ]      && echo " monitor.interval: $MONITOR_INTERVAL"
@@ -202,10 +219,12 @@ JAVA_CMD="java $JVM_OPTS \
     -Dperf.max-consecutive-empty=$PERF_MAX_CONSECUTIVE_EMPTY \
     -Dperf.flush-threshold=$PERF_FLUSH_THRESHOLD \
     -Dperf.error-only=$PERF_ERROR_ONLY \
+    -Dperf.tenant-id=$PERF_TENANT_ID \
     $VM_OPTS \
     -DDB_HOST_NAME=$DB_HOST_NAME \
     -DDB_HOST_CK=$DB_HOST_CK \
     -DDB_NAME=$DB_NAME \
+    -DDB_PORT=$DB_PORT \
     -DDB_USER=$DB_USER \
     -jar $JAR_FILE"
 

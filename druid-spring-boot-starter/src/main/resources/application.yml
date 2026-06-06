@@ -8,7 +8,7 @@ spring:
       strict: false
       datasource:
         mysql:
-          url: jdbc:mysql://${DB_HOST_NAME:172.19.4.41}:3306/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          url: jdbc:mysql://${DB_HOST_NAME:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
           username: ${DB_USER:root}
           password: Ankki_mySQL123
           driver-class-name: com.mysql.cj.jdbc.Driver
@@ -59,5 +59,6 @@ perf:
   max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
   flush-threshold: ${PERF_FLUSH_THRESHOLD:180}
   error-only: ${PERF_ERROR_ONLY:false}
+  tenant-id: ${PERF_TENANT_ID:0}
 
 # 日志配置统一由 logback-spring.xml 管理
