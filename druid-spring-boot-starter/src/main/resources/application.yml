@@ -8,7 +8,7 @@ spring:
       strict: false
       datasource:
         mysql:
-          url: jdbc:mysql://${DB_HOST_NAME:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          url: jdbc:mysql://${DB_HOST:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
           username: ${DB_USER:root}
           password: Ankki_mySQL123
           driver-class-name: com.mysql.cj.jdbc.Driver
@@ -23,8 +23,8 @@ spring:
             testOnReturn: true
             poolPreparedStatements: true
         ck:
-          url: jdbc:clickhouse://${DB_HOST_CK:172.19.4.41}:8123/bs_audit?socket_timeout=6000000
-          username: root
+          url: jdbc:clickhouse://${DB_HOST_CK:172.19.4.41}:${DB_PORT_CK:8123}/${DB_NAME_CK:bs_audit}?socket_timeout=6000000
+          username: ${DB_USER_CK:root}
           password: Ankki_cK123
           driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
           druid:

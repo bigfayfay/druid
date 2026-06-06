@@ -309,6 +309,7 @@ public class PerfTestRunner implements CommandLineRunner {
         long totalFailure = 0;
         
         log.info("[APP] \n========== 全局性能统计汇总 ==========");
+        // [stat].title
         log.info("[APP] {}", String.format("%-15s | %10s | %12s | %12s | %10s | %12s", 
                 "线程", "调用次数", "总耗时(ms)", "成功数", "失败数", "速度(rec/s)"));
         log.info("[APP] {}", createSeparatorLine());
@@ -340,7 +341,7 @@ public class PerfTestRunner implements CommandLineRunner {
         
         log.info("[APP] {}", createSeparatorLine());
         
-        // 全局汇总
+        // [stat].gloal 全局汇总
         long globalElapsedMs = globalStats.getEndTimeMillis() - globalStats.getStartTimeMillis();
         double globalSpeed = globalElapsedMs > 0 ? (totalCalls * 1000.0 / globalElapsedMs) : 0;
         double avgParseMs = totalCalls > 0 ? (totalParseNanos / 1_000_000.0 / totalCalls) : 0;

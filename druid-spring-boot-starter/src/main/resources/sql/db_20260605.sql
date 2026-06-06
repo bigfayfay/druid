@@ -1,3 +1,6 @@
+-- mysql -uroot -p bs_audit < xx.sql
+-- mysqldump -uroot -p bs_audit block_record_info > /tmp/tab_part_bak.sql
+
 -- DROP TABLE IF EXISTS bs_audit.sql_template_res;
 CREATE TABLE bs_audit.sql_template_res  (
     `id`       bigint(20) unsigned NOT NULL COMMENT '主键',

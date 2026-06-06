@@ -41,11 +41,15 @@ MONITOR_INTERVAL="10"
 CACHE_USE=""
 
 # 数据库配置
-DB_HOST_NAME=localhost
-DB_HOST_CK=localhost
-DB_NAME=bs_audit
+DB_HOST=localhost
 DB_PORT=3306
+DB_NAME=bs_audit
 DB_USER=sroot
+
+DB_HOST_CK=localhost
+DB_PORT_CK=8123
+DB_NAME_CK=bs_audit
+DB_USER_CK=root
 
 # JVM 参数
 JVM_OPTS="-Xms1g -Xmx2g -XX:+UseG1GC"
@@ -95,11 +99,17 @@ while [ $# -gt 0 ]; do
         --db-port)
             DB_PORT="$2"; shift 2 ;;
         --db-host)
-            DB_HOST_NAME="$2"; shift 2 ;;
+            DB_HOST="$2"; shift 2 ;;
         --db-host-ck)
             DB_HOST_CK="$2"; shift 2 ;;
         --db-user)
             DB_USER="$2"; shift 2 ;;
+        --db-port-ck)
+            DB_PORT_CK="$2"; shift 2 ;;
+        --db-name-ck)
+            DB_NAME_CK="$2"; shift 2 ;;
+        --db-user-ck)
+            DB_USER_CK="$2"; shift 2 ;;
         --jvm)
             JVM_OPTS="$2"; shift 2 ;;
         --jar)
@@ -172,11 +182,14 @@ echo " Druid SQL Parser Perf Test"
 echo "========================================"
 echo " JAR:              $JAR_FILE"
 echo " JVM:              $JVM_OPTS"
-echo " DB_HOST_NAME:     $DB_HOST_NAME"
+echo " DB_HOST:           $DB_HOST"
 echo " DB_HOST_CK:       $DB_HOST_CK"
 echo " DB_NAME:          $DB_NAME"
 echo " DB_PORT:          $DB_PORT"
 echo " DB_USER:          $DB_USER"
+echo " DB_PORT_CK:       $DB_PORT_CK"
+echo " DB_NAME_CK:       $DB_NAME_CK"
+echo " DB_USER_CK:       $DB_USER_CK"
 echo " perf.enabled:     $PERF_ENABLED"
 echo " perf.batch-size:  $PERF_BATCH_SIZE"
 echo " perf.db-type:     $PERF_DB_TYPE"
@@ -221,11 +234,14 @@ JAVA_CMD="java $JVM_OPTS \
     -Dperf.error-only=$PERF_ERROR_ONLY \
     -Dperf.tenant-id=$PERF_TENANT_ID \
     $VM_OPTS \
-    -DDB_HOST_NAME=$DB_HOST_NAME \
+    -DDB_HOST=$DB_HOST \
     -DDB_HOST_CK=$DB_HOST_CK \
     -DDB_NAME=$DB_NAME \
     -DDB_PORT=$DB_PORT \
     -DDB_USER=$DB_USER \
+    -DDB_PORT_CK=$DB_PORT_CK \
+    -DDB_NAME_CK=$DB_NAME_CK \
+    -DDB_USER_CK=$DB_USER_CK \
     -jar $JAR_FILE"
 
 # ============== 检查是否已启动 ==============
