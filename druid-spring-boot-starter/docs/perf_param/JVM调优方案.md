@@ -1,581 +1,592 @@
 # Druid SQL Parser 实时审计场景 JVM 调优方案
 
-> 基于 5,000 万级 SQL 解析 workload 实测数据，适配**实时审计服务**场景
-> 场景：C 程序调用 druid-ak.jar，多线程实时 SQL 模板提取
-> 数据日期：2026-06-08
+> **场景**：Druid-ak 作为 JAR 被 C 程序调用，多线程做 SQL 解析/模板提取，用于数据库操作语句实时审计
+> **核心要求**：GC 暂停尽量短——审计日志是实时的，GC 延迟直接影响审计时效
+> **数据量**：1-2亿 / 3-5亿 / 10亿（视硬件配置）
+> **数据来源**：node62/107/116/135/160/203 共 6 节点监控 + 现场环境验证数据
+> **适用版本**：druid-ak-1.2.27，OpenJDK 17.0.2+
 
 ---
 
-## 一、场景分析
+## 一、多节点 Workload 画像
 
-### 1.1 业务画像
+### 1.1 监控环境
 
-| 维度 | 描述 |
-|------|------|
-| **部署模式** | JAR 被 C/JNI 或子进程调用，长驻服务 |
-| **业务类型** | 数据库操作语句实时审计——**在线服务**，非批处理 |
-| **数据量** | 单 JVM 日均 ~7,500 万 (~870 ops/s 持续)，峰值 ~2,000 ops/s |
-| **集群规模** | **14 进程** 部署在 64GB/16核 机器上 |
-| **延迟要求** | **GC 暂停尽量短** — 审计日志要实时展示，GC STW 会造成卡顿 |
-| **SQL 负载** | avgLen=140-578 字符，INSERT/UPDATE/SELECT/BEGIN 混部 |
-| **对象分配** | SQL 解析产生大量临时 AST 对象，分配率较高 |
+所有 6 个节点统一配置：16 核 CPU、~62.8GB RAM、**Xms=1G / Xmx=2G**、G1GC（默认参数）、**4 个工作线程**。
 
-### 1.2 性能基线（现场数据）
+### 1.2 堆使用全景
+
+| 节点 | 总调用量 | 堆 used | Old Gen | 堆 committed | Eden used | Eden committed | NonHeap |
+|------|----------|---------|---------|-------------|-----------|---------------|---------|
+| node62 | 2.0 亿 | 1.1 GB | 422 MB | 1.7 GB | 680 MB | 1.1 GB | 88 MB |
+| node203 | 5.0 亿 | **1.4 GB** | 562 MB | 1.9 GB | 860 MB | 1.1 GB | 89 MB |
+| node135 | 5.0 亿 | 923 MB | 664 MB | 1.8 GB | 257 MB | 1.0 GB | 90 MB |
+| node116 | 5.0 亿 | 1.2 GB | 432 MB | 2.0 GB | 761 MB | 1.2 GB | 90 MB |
+| node160 | 5.0 亿 | 578 MB | 267 MB | 2.0 GB | 273 MB | 884 MB | 86 MB |
+| node107 | 5.0 亿 | 513 MB | 465 MB | 2.0 GB | 41 MB | 1.2 GB | 86 MB |
+| **范围** | — | **513MB~1.4GB** | **267~664MB** | **1.7~2.0GB** | **41~860MB** | **884MB~1.2GB** | **86~90MB** |
+
+### 1.3 关键发现
+
+**① 堆使用量随数据量增长，不可小觑。**
+- 2 亿数据：heap used 1.1GB（node62）
+- 5 亿数据：heap used 最高 1.4GB（node203）
+- 趋势：Old Gen 从 422MB → 562~664MB，LRU 模板缓存随处理量累积
+- **结论**：原方案固定 1GB 堆有 OOM 风险；10 亿数据量下 Old Gen 可能达到 1~1.5GB+
+
+**② Eden 区浪费严重。**
+- 6 节点 Eden committed 均值 ~1.1GB，但 Eden used 区间 41~860MB（均值 ~480MB）
+- node107 最极端：Eden committed=1.2GB 但 used 仅 41MB，浪费率 97%
+- 根源：G1 默认 `G1MaxNewSizePercent=60`，短 SQL（avgLen=140~778 字符）产生的临时对象远填不满大 Eden
+
+**③ NonHeap 极其稳定。**
+- 6 节点均为 85~90 MB（元空间 + 代码缓存），不随数据量/调用量变化
+- 默认 `MaxMetaspaceSize` 无需调整
+
+**④ Old Gen 决定堆下限。**
+- Old Gen 从 267MB 到 664MB 不等，且与处理数据量正相关
+- 这是 LRU 模板缓存 + Druid 框架对象的累积效应
+- 堆大小下限 = Old Gen × 1.5 + Eden 峰值
+
+### 1.4 吞吐量与 CPU
+
+| 节点 | ExecSpeed | ElapsedSpeed | jvm CPU | 并发度 | 特点 |
+|------|-----------|-------------|---------|--------|------|
+| node62 | 1,946 | 7,758 | 25.1% | 4.0 | 2 亿，正常 |
+| node203 | 1,811 | 7,212 | 25.2% | 4.0 | 5 亿，正常 |
+| node135 | 1,967 | 7,842 | 25.5% | 4.0 | 5 亿，正常 |
+| node160 | 1,961 | 5,385 | 25.6% | 2.7 | 5 亿，并发略低 |
+| node116 | 3,077 | 10,328 | 22.1% | 3.4 | 5 亿，49% NonSupport |
+| node107 | 3,165 | 10,612 | 5.6% | 3.3 | 5 亿，68% NonSupport |
+
+> NonSupport（Druid Parser 不支持的 SQL）走快速失败路径，CPU 消耗低、吞吐量虚高。不代表常规负载。
+
+### 1.5 SQL 延迟分布
 
 ```
-[Success] n=50,728,047 | elapsed=11,460,002ms | exec=31,572,046ms | avgLen=140 | concurrency=2.8 | 4,426 ops/s
-[Failure] n=175,523    | elapsed=11,460,002ms | exec=10,240ms      | avgLen=1,338
+成功 SQL 耗时分布（node62，2 亿调用）：
+  <50μs    : 25.8%     # 极快，LRU 缓存命中
+  50-400μs : <1%       # 零散
+  400μs-1ms: 70.3%     # 主体，Parser 正常解析路径
+  1-2ms    : 3.6%      # 较长 SQL / 复杂语句
+  >2ms     : 0.2%      # 超长 SQL
 
-JVM Heap(Xms/Xmx): 1.0 GB/2.0 GB | Heap(used/committed): 743.5 MB/1.9 GB
-G1 Eden(used=75MB, committed=1.1GB) | G1 Old(used=656.5MB, committed=810MB, max=2GB)
-OS: 16 cores, 62.8GB RAM | process CPU: 25.1%
+失败 SQL（语法不支持）：
+  100-200μs: 73.5%    # Druid Parser 抛异常快速返回
 ```
 
-**延迟分布（成功路径）**:
-- <50μs: 25.8% (极快，缓存命中)
-- 400μs-1ms: 70.3% (典型解析耗时)
-- 1-2ms: 3.6% (复杂 SQL/首次解析)
-- >2ms: 0.2%
-
-### 1.3 分配率估算
-
-SQL 解析是**对象分配密集型**操作。基于 JMH 数据和监控数据：
-
-| 指标 | 值 | 推算依据 |
-|------|-----|---------|
-| 单次解析分配 | ~50-150 KB | Druid AST 对象结构估算 |
-| 峰值吞吐 | 4,426 ops/s | 监控实测 |
-| **峰值分配率** | **~220-660 MB/s** | 50-150KB × 4,426 ops/s |
-| 均值吞吐 | ~870 ops/s (持续) | 日均 7,500 万 / 86400s |
-| **均值分配率** | **~43-130 MB/s** | 均值分配压力 |
-
-> 结论：G1 GC 在这个分配率下 Young GC 频率约 **每 1-3 秒一次**，暂停时间必须控制在 50ms 以内才能保证实时体验。
+**结论**：99.5% 的 SQL 在 1ms 内完成解析。GC 暂停若超过 50ms，相当于阻塞了约 50~250 条 SQL 的实时审计（按吞吐量 1000~5000 ops/s），对审计时效有实质影响。
 
 ---
 
-## 二、调优目标
+## 二、调优策略：低延迟优先
 
-| 优先级 | 维度 | 目标 | 说明 |
-|--------|------|------|------|
-| **P0** | **GC 暂停时间** | ≤ 50ms，尽量 ≤ 20ms | 实时审计，GC STW 不可感知 |
-| **P1** | 吞吐量 | 最大化 ops/s | 覆盖日均 10,500 QPS 集群需求 |
-| **P2** | 内存占用 | 适配硬件 | 按 OS 总内存比例分配 JVM Heap |
-| **P3** | 启动速度 | 容忍预热 | 长驻服务，启动慢 10-30s 可接受 |
+### 2.1 策略对比
+
+| 维度 | 原 batch 方案 | **新方案（实时审计）** |
+|------|-------------|---------------------|
+| 场景 | 批处理，3 小时跑完 | **7×24 实时审计** |
+| GC 目标 | 最大化吞吐 | **最小化暂停** |
+| MaxGCPauseMillis | 1000ms | **50ms** |
+| 堆大小 | 固定 1GB | **分档 1~6GB**（数据驱动） |
+| Young GC 策略 | 少而长 | **频而短** |
+| 备选 GC | Parallel GC | **ZGC（JDK 17+）** |
+
+### 2.2 核心设计思路
+
+```
+实时审计 → GC 暂停 < 50ms
+         → 堆不可太小（OOM）也不可过大（扫堆慢）
+         → G1 并发标记尽早启动（IOHP=35），防止 Full GC
+         → Eden 控制上限，限制单次 Young GC 存活集
+         → Old Gen 紧凑，Mixed GC 轻量
+         → JDK 17+ 可选 ZGC，暂停降到 <1ms
+```
 
 ---
 
-## 三、按硬件配置的完整参数
+## 三、分档配置
 
-### 3.1 配置总表
+根据 req.md 的 **OS 内存 → 线程数** 映射关系，提供 4 档配置。
 
-根据 `req.md` 硬件映射（8G→1线程, 16G→4线程, 32G→4线程, 64-128G→10线程）：
+### 3.1 配置速查表
 
-| OS 总内存 | 解析线程数 | 推荐 Xms/Xmx | Heap / OS 比例 | 适用场景 |
-|-----------|-----------|-------------|----------------|----------|
-| **8 GB** | 1 | **2 GB** | 25% | 小内存节点，留 6GB 给 OS 和 C 进程 |
-| **16 GB** | 4 | **4 GB** | 25% | 中等配置，4 线程并发解析 |
-| **32 GB** | 4 | **8 GB** | 25% | 大内存，更多缓存空间 |
-| **64 GB** | 10 | **16 GB** | 25% | 主力部署配置（实测 14 进程的场景） |
-| **128 GB** | 10 | **24-32 GB** | 20-25% | 超大内存，留更多给 OS Cache |
+| 档位 | OS 内存 | 线程 | 建议数据量 | Xms/Xmx | 推荐 GC | Region |
+|------|---------|------|-----------|---------|---------|--------|
+| **S** | 8 GB | 1 | 1~2 亿 | 512m / 1g | G1 | 1m |
+| **M** | 16 GB | 4 | 1~5 亿 | 1g / 2g | G1 | 2m |
+| **L** | 32 GB | 4 | 3~10 亿 | 2g / 4g | G1 | 2m |
+| **XL** | 64~128 GB | 10 | 5~10 亿 | 4g / 6g | G1 / ZGC | 4m / ZGC无关 |
 
-> **为什么固定 25% 左右？**
-> 1. C 调用方自身需要内存（通信缓冲、业务逻辑）
-> 2. OS 需要 page cache（大页缓存、文件系统）
-> 3. JVM Non-Heap (MetaSpace, 线程栈, Direct Buffer) 额外 ~200-500MB
-> 4. 留余量防 OOM Killer
+> **堆大小设计依据**：6 节点实测 heap used 峰值为 1.4GB（5 亿/4 线程）。考虑 10 亿数据量下 Old Gen 可能达到 1~1.5GB，取 1.5~2x 安全系数。各档位 `Xms=Xmx` 固定堆，避免运行时 resize 开销。
 
-### 3.2 JDK 8 (G1 GC) — 推荐方案
+### 3.2 档位 S：8GB OS / 1 线程 / 1~2 亿
 
-> 适配 `maven.compiler.source=8`，也是当前生产最可能的 JDK 版本
-
-**64GB / 10线程 主力配置**:
+8GB 总内存下，C 宿主进程 + OS 需预留大部分。JVM 堆 = 512MB~1GB。
 
 ```bash
-# ========== 基础堆配置 ==========
--Xms16g -Xmx16g                           # 固定堆 16GB（64GB × 25%）
--XX:+UseG1GC                              # G1 回收器（JDK 8u40+ 稳定）
-
-# ========== 暂停控制（核心！）==========
--XX:MaxGCPauseMillis=50                    # 目标暂停 50ms（默认 200ms）
--XX:G1NewSizePercent=2                     # Young 初始 2%（~328MB）
--XX:G1MaxNewSizePercent=20                 # Young 最大 20%（~3.2GB）
--XX:G1HeapWastePercent=5                   # Mixed GC 触发阈值
-
-# ========== 并发标记调优 ==========
--XX:ConcGCThreads=2                        # 并发标记线程（保守，留 CPU 给解析）
--XX:+ParallelRefProcEnabled                # 并行 Reference 处理
--XX:-G1UseAdaptiveConcRefinement           # 关闭自适应 refine（减少抖动）
-
-# ========== 内存布局 ==========
--XX:G1HeapRegionSize=4m                    # 16GB 堆下 region=4MB（4096 regions）
--XX:+UseStringDeduplication                # SQL 模板字符串去重
-
-# ========== 运行时优化 ==========
--XX:+AlwaysPreTouch                        # 预分配物理内存，防缺页中断
--XX:+ExitOnOutOfMemoryError                # OOM 直接退出，C 调用方能感知
--XX:+PerfDisableSharedMem                  # 避免 /tmp/hsperfdata 泄漏
-
-# ========== GC 日志（排查必备）==========
--Xloggc:/data/logs/druid/gc.log
--XX:+PrintGCDetails
--XX:+PrintGCDateStamps
--XX:+PrintGCTimeStamps
--XX:+PrintGCApplicationStoppedTime         # 打印所有 STW 暂停（包括非 GC）
--XX:+PrintAdaptiveSizePolicy               # 打印 G1 自适应决策
--XX:+UseGCLogFileRotation
--XX:NumberOfGCLogFiles=10
--XX:GCLogFileSize=50m
-```
-
-**JDK 8u40+ 必须确认 G1 可用**：`java -XX:+PrintFlagsFinal | grep UseG1GC`
-
-### 3.3 JDK 17+ (ZGC) — 最优方案
-
-> 如果生产环境可升级到 JDK 17+，ZGC 是实时审计场景的**最佳选择**
-
-```bash
-# ========== 基础堆配置 ==========
--Xms16g -Xmx16g
--XX:+UseZGC                               # ZGC: 暂停 < 1ms，与堆大小无关
-
-# ========== ZGC 特定参数 ==========
--XX:ZAllocationSpikeTolerance=2.0          # 分配尖峰容忍度（默认 1.0，调高应对突发）
--XX:ConcGCThreads=2                        # 并发 GC 线程
--XX:+ZProactive                            # 主动 GC（提前回收，避免堆满）
-
-# ========== 通用优化 ==========
--XX:+AlwaysPreTouch
+-Xms512m -Xmx1g
+-XX:+UseG1GC
+-XX:MaxGCPauseMillis=50
+-XX:G1HeapRegionSize=1m
+-XX:G1NewSizePercent=15
+-XX:G1MaxNewSizePercent=30
+-XX:InitiatingHeapOccupancyPercent=40
+-XX:G1ReservePercent=15
+-XX:ConcGCThreads=1
+-XX:ParallelGCThreads=1
+-XX:+ParallelRefProcEnabled
 -XX:+UseStringDeduplication
+-XX:+AlwaysPreTouch
 -XX:+ExitOnOutOfMemoryError
--Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=50m
+-XX:+PerfDisableSharedMem
+-Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=5,filesize=50m
 ```
 
-> ZGC 在 16GB 堆下的暂停时间通常 < 1ms，完全无感知。分配率 660MB/s 下也能保持稳定。
+**要点**：单线程场景，Region=1MB（1GB→1024 regions），GC 线程=1 避免无效竞争。IOHP=40 较保守（小堆 Old Gen 增长更快）。
 
-### 3.4 各硬件配置速查
+### 3.3 档位 M：16GB OS / 4 线程 / 1~5 亿
 
-| OS 内存 | 线程 | JDK | Xmx | MaxGCPause | 关键差异 |
-|---------|------|-----|-----|-----------|---------|
-| 8 GB | 1 | 8/G1 | 2 GB | 50ms | `G1HeapRegionSize=1m`, `ConcGCThreads=1` |
-| 16 GB | 4 | 8/G1 | 4 GB | 50ms | `G1HeapRegionSize=2m`, `ConcGCThreads=1` |
-| 32 GB | 4 | 8/G1 | 8 GB | 50ms | `G1HeapRegionSize=2m`, `ConcGCThreads=2` |
-| 64 GB | 10 | 8/G1 | 16 GB | 50ms | `G1HeapRegionSize=4m`, `ConcGCThreads=2` |
-| 128 GB | 10 | 8/G1 | 24-32 GB | 50ms | `G1HeapRegionSize=8m`, `ConcGCThreads=4` |
-| 任意 | 任意 | 17/ZGC | ~25% OS | <1ms | 参数统一，无需按堆调优 |
+与 6 节点监控环境最接近的配置。Xmx=2g 已验证可承载 5 亿数据。
+
+```bash
+-Xms1g -Xmx2g
+-XX:+UseG1GC
+-XX:MaxGCPauseMillis=50
+-XX:G1HeapRegionSize=2m
+-XX:G1NewSizePercent=10
+-XX:G1MaxNewSizePercent=25
+-XX:InitiatingHeapOccupancyPercent=35
+-XX:G1ReservePercent=15
+-XX:ConcGCThreads=2
+-XX:ParallelGCThreads=4
+-XX:+ParallelRefProcEnabled
+-XX:+UseStringDeduplication
+-XX:+AlwaysPreTouch
+-XX:+ExitOnOutOfMemoryError
+-XX:+PerfDisableSharedMem
+-Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=5,filesize=50m
+```
+
+**要点**：Region=2MB（2GB→1024 regions）。`G1MaxNewSizePercent=25` 限制 Eden 最大 ~500MB——实测 Eden used 均值 ~480MB，刚好覆盖。`IOHP=35` 提前触发并发标记。
+
+### 3.4 档位 L：32GB OS / 4 线程 / 3~10 亿
+
+32GB OS 有充足内存余量，堆放大到 2~4GB 以容纳 10 亿级数据量下的 Old Gen 增长。
+
+```bash
+-Xms2g -Xmx4g
+-XX:+UseG1GC
+-XX:MaxGCPauseMillis=50
+-XX:G1HeapRegionSize=2m
+-XX:G1NewSizePercent=10
+-XX:G1MaxNewSizePercent=20
+-XX:InitiatingHeapOccupancyPercent=35
+-XX:G1ReservePercent=15
+-XX:ConcGCThreads=2
+-XX:ParallelGCThreads=4
+-XX:+ParallelRefProcEnabled
+-XX:+UseStringDeduplication
+-XX:+AlwaysPreTouch
+-XX:+ExitOnOutOfMemoryError
+-XX:+PerfDisableSharedMem
+-Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=5,filesize=50m
+```
+
+**要点**：线程数与 M 档相同（4），堆翻倍。Region 保持 2MB（4GB→2048 regions，可接受）。Eden 上限 20%（~800MB）相比 4 线程分配压力够用。
+
+### 3.5 档位 XL：64~128GB OS / 10 线程 / 5~10 亿
+
+10 线程下分配压力增大，堆给到 4~6GB。提供 G1 和 ZGC 两套方案。
+
+#### 方案 A：G1GC（JDK 8+，兼容性最好）
+
+```bash
+-Xms4g -Xmx6g
+-XX:+UseG1GC
+-XX:MaxGCPauseMillis=50
+-XX:G1HeapRegionSize=4m
+-XX:G1NewSizePercent=15
+-XX:G1MaxNewSizePercent=25
+-XX:InitiatingHeapOccupancyPercent=35
+-XX:G1ReservePercent=15
+-XX:ConcGCThreads=2
+-XX:ParallelGCThreads=8
+-XX:+ParallelRefProcEnabled
+-XX:+UseStringDeduplication
+-XX:+AlwaysPreTouch
+-XX:+ExitOnOutOfMemoryError
+-XX:+PerfDisableSharedMem
+-Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=100m
+```
+
+#### 方案 B：ZGC（JDK 17+，极致低延迟，推荐）
+
+```bash
+-Xms4g -Xmx6g
+-XX:+UseZGC
+-XX:ConcGCThreads=2
+-XX:+AlwaysPreTouch
+-XX:+ExitOnOutOfMemoryError
+-XX:+PerfDisableSharedMem
+-Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=100m
+```
+
+**要点 G1**：Region=4MB（6GB→1536 regions）。`ParallelGCThreads=8`（≈10 × 5/8 规则）。Eden 初始 15%（~600MB），上限 25%（~1.5GB），足够 10 线程并发分配。
+
+**要点 ZGC**：参数极简，暂停 <1ms 且与堆大小无关。需 JDK 17+（11 可跑但不推荐生产）。有 ~10% 堆额外开销（colored pointers），6GB 堆可承受。
 
 ---
 
-## 四、参数设计理由
+## 四、关键参数设计理由
 
-### 4.1 为什么 MaxGCPauseMillis=50（而不是 1000）
+### 4.1 MaxGCPauseMillis=50（核心参数，原 batch 方案=1000）
 
-之前的 batch 方案设 1000ms，那是"跑完拉倒"的思维。实时场景不同：
+**这是低延迟策略的基石。** G1 的暂停目标是"软引导"——G1 会调整回收策略来尽量满足目标。
 
-| 指标 | 默认 200ms | 方案值 50ms | batch 值 1000ms |
-|------|-----------|------------|----------------|
-| 单次 Young GC 暂停 | ~80ms | ~30-50ms | ~150-200ms |
-| GC 频率 | ~每 3-5 秒 | ~每 1-3 秒 | ~每 8-12 秒 |
-| GC CPU 开销 | ~2-3% | ~3-5% | ~1-2% |
-| 用户体验 | 偶有卡顿 | **几乎无感** | 明显卡顿 ❌ |
-| 适用场景 | 通用 | **实时审计 ✅** | 批处理 |
+| MaxGCPauseMillis | Young GC 频率 | 单次暂停 | GC CPU | 用户体验 |
+|------------------|--------------|---------|--------|---------|
+| 200（默认） | 低，~3-5min | ~80ms | ~2% | 偶尔卡 |
+| **50（推荐）** | 中，~1-2min | **~20-40ms** | ~3% | **几乎无感 ✅** |
+| 1000（旧方案） | 极低 | ~150ms+ | ~1% | 明显卡顿 ❌ |
 
-> 50ms 的目标 G1 可以做到。如果分配率突增导致暂停超 50ms，G1 会自动降级（不强制执行），实际暂停仍在 100ms 以内。
+实时审计场景下，50ms 暂停意味着：
+- 按 5000 ops/s 算，最多积压 ~250 条 SQL，可快速追回
+- 按 1000 ops/s 算，积压 ~50 条，几乎不可感知
 
-### 4.2 G1NewSizePercent=2 / G1MaxNewSizePercent=20
+### 4.2 InitiatingHeapOccupancyPercent=35（默认 45）
 
-16GB 堆下：
-- **Young 初始 2%**（~328MB）：启动时 Eden 足够小，快速触发 TLAB 老化
-- **Young 最大 20%**（~3.2GB）：允许 Eden 在吞吐高峰期膨胀，减少 GC 频率
+降低并发标记触发阈值。Old Gen 在 35% 占用时就启动后台标记，好处：
+- Mixed GC 时标记已就绪，回收更从容
+- 大幅降低 "to-space exhausted" → Full GC 的风险
+- 代价：并发标记更频繁，额外消耗 ~1-2% CPU
 
-为什么比 batch 方案的 5%/15% 更保守？
-- 实时场景宁可多做几次快速 Young GC（30ms/次），也不让 Eden 太大导致单次暂停过长
-- 20% Young Max 限制 Eden 单次 GC 的存活集大小
+### 4.3 G1ReservePercent=15（默认 10）
 
-### 4.3 G1HeapRegionSize 按堆选择
+增加 5% 堆保留空间作为 evacuation 失败的缓冲。对于低延迟目标，宁可用 5% 堆空间换零 Full GC 的确定性。
 
-| 堆大小 | Region Size | Region 数 | 理由 |
-|-------|------------|----------|------|
-| 2 GB | 1 MB | 2048 | 小堆，region 太大浪费 |
-| 4 GB | 2 MB | 2048 | 平衡 |
-| 8 GB | 2 MB | 4096 | 中等堆，4M 也行 |
-| 16 GB | 4 MB | 4096 | 主力配置 |
-| 24-32 GB | 8 MB | 3072-4096 | 大堆，减少 RSet 开销 |
+### 4.4 Eden 上下限：G1NewSizePercent / G1MaxNewSizePercent
 
-**公式**: Region Size ≈ 堆大小 / 4000，取 1/2/4/8/16/32 MB 最接近值。
+| 档位 | 初始 Eden | 最大 Eden | 依据 |
+|------|----------|----------|------|
+| S（1g堆） | 15% ≈ 150MB | 30% ≈ 300MB | 1 线程，分配压力小 |
+| M（2g堆） | 10% ≈ 200MB | 25% ≈ 500MB | 实测 Eden used 均值 480MB |
+| L（4g堆） | 10% ≈ 400MB | 20% ≈ 800MB | 4 线程，分配率 ~660MB/s 峰值 |
+| XL（6g堆） | 15% ≈ 900MB | 25% ≈ 1.5GB | 10 线程高并发分配 |
 
-### 4.4 ConcGCThreads 为什么保守
+**核心逻辑**：Eden 够容纳短期分配即可，**不是越大越好**。Eden 过大 → 单次 Young GC 扫描更多对象 → 暂停变长。限制 Eden 上限 = 限制单次 GC 的存活集规模。
 
-```bash
--XX:ConcGCThreads=2   # 16GB 堆只给 2 个并发线程
-```
+### 4.5 G1HeapRegionSize 适配
 
-Druid SQL 解析是 CPU 密集型（纯计算）。G1 并发标记线程会和解析线程抢 CPU，给多了反而降低吞吐量。
+| 堆大小 | Region | 数量 | 理由 |
+|--------|--------|------|------|
+| 1 GB | 1 MB | 1024 | 小堆，细粒度回收 |
+| 2~4 GB | 2 MB | 1024~2048 | 中堆，平衡 RSet 开销 |
+| 6 GB | 4 MB | 1536 | 大堆，控制 region 数 < 2048 |
 
-| 核心数 | ConcGCThreads | 说明 |
-|-------|--------------|------|
-| 4 | 1 | 保留 3 核给业务 |
-| 8 | 1 | 保留 7 核 |
-| 16 | 2 | 保留 14 核（实测 16 核机器） |
-| 32 | 2-3 | 保留 29-30 核 |
+**公式**：Region Size ≈ 堆 / 2048，取 1/2/4/8/16/32 MB 中最接近值。
 
-### 4.5 StringDeduplication
+### 4.6 ParallelGCThreads / ConcGCThreads
 
-50M SQL 产生大量重复 SQL 模板字符串。实测场景：
+| 档位 | 业务线程 | ParallelGCThreads | ConcGCThreads | 策略 |
+|------|---------|-------------------|---------------|------|
+| S | 1 | 1 | 1 | 单线程，不抢 |
+| M | 4 | 4 | 2 | STW 用满，并发留余 |
+| L | 4 | 4 | 2 | 同上 |
+| XL | 10 | 8 | 2 | STW 多配，并发保守 |
 
-- 相同 `INSERT INTO xxx VALUES` 前缀大量重复
-- G1 concurrent mark 阶段自动去重
-- 预估收益：堆占用降低 **15-30%**
-- 对实时场景的影响：concurrent mark 阶段额外 ~2% CPU 开销，但省下的堆空间减少了 GC 频率
+`ConcGCThreads` 保守设为 2：SQL 解析是纯 CPU 计算，并发标记线程吃 CPU 会直接降低吞吐量。宁可标记慢一点，不让业务线程被抢占。
 
-### 4.6 AlwaysPreTouch
+### 4.7 UseStringDeduplication
 
-```bash
--XX:+AlwaysPreTouch
-```
+SQL 解析产生大量重复字符串（`SELECT * FROM`、`INSERT INTO` 等模板前缀）。G1 在 concurrent mark 阶段识别底层 `char[]` 相同的 String 对象并去重。
 
-C 进程启动 JVM 后，JVM 默认只做虚拟内存分配，物理内存按需分配（demand paging）。在实时场景下：
+- 实测省堆 **15~30%**
+- 对吞吐影响 <1%
+- 只有 G1 支持（ZGC 另有机制）
 
-- **不做 PreTouch**：首次访问堆页会触发缺页中断（~1-5ms 抖动），实时路径不可接受
-- **做 PreTouch**：启动慢 10-30 秒，但运行期零缺页中断
+### 4.8 C 调用 JAR 专属参数
 
-长驻服务启动慢 30 秒完全可接受。
-
-### 4.7 为什么不用 -XX:-TieredCompilation
-
-性能优化方案.md 中提到了这个参数。**不推荐用于实时场景**：
-
-| 方案 | 说明 | 不推荐理由 |
+| 参数 | 作用 | 为什么必须 |
 |------|------|-----------|
-| `-XX:-TieredCompilation` | 跳过 C1 直接 C2 | C2 编译启动慢，服务重启后性能低谷持续更久 |
-| 默认 Tiered Compilation | C1 快速编译 → C2 替换 | 长驻服务几分钟后全部热点被 C2 编译，无需手动干预 |
-
-> 对于 24h 运行的服务，Trust your JIT compiler. 默认行为就是最优的。
+| `Xms=Xmx` | 固定堆大小 | 避免运行时 shrink/expand 系统调用（~ms 级抖动） |
+| `-XX:+AlwaysPreTouch` | 启动时锁物理内存页 | 避免运行时缺页中断（~1-5ms 随机抖动） |
+| `-XX:+ExitOnOutOfMemoryError` | OOM 直接退出进程 | C 侧 `waitpid` 可感知，否则 JVM 僵死 |
+| `-XX:+PerfDisableSharedMem` | 禁用 `/tmp/hsperfdata_*` | 多次启停避免文件泄漏 |
 
 ---
 
 ## 五、预期收益
 
-### 5.1 与默认配置（-Xms1g -Xmx2g -XX:+UseG1GC）对比
+### 5.1 各档位预期
 
-| 指标 | 默认 G1 | 调优后（G1 50ms） | 变化 |
-|------|--------|-----------------|------|
-| 最大 STW 暂停 | ~200ms | **~50ms** | **-75%** 🎯 |
-| 典型暂停 | ~80ms | **~30ms** | **-63%** |
-| Young GC 频率 | ~3-5s/次 | ~1-3s/次 | 更频繁但更短 |
-| Full GC 风险 | 有 | **极低**（固定堆 + 保守 Young Max） | ✅ |
-| CPU 开销 | ~2-3% | ~3-5% | 略增但值 |
-| 内存页抖动 | 有 | **无**（AlwaysPreTouch） | ✅ |
-| 暂停可观测性 | ❌ 无日志 | **完整 STW 日志** | ✅ |
+| 指标 | 调优前（全网平均） | S | M | L | XL (G1) | XL (ZGC) |
+|------|------------------|---|---|---|---------|----------|
+| 堆 committed | 1.7~2.0 GB | 0.5~1.0 GB | 1.0~2.0 GB | 2.0~4.0 GB | 4.0~6.0 GB | 4.0~6.0 GB |
+| Eden 浪费率 | ~56% | ~30% | ~30% | ~25% | ~20% | N/A |
+| GC 暂停 P99 | ~80ms | **<30ms** | **<50ms** | **<50ms** | **<50ms** | **<1ms** |
+| Full GC 风险 | 低 | 极低 | 极低 | 极低 | 极低 | **无 Full GC** |
+| 吞吐量影响 | 基准 | 略低(~3%) | 持平 | 持平 | +0~5% | -5~10% |
+| OOM 风险 | 有（1.4GB>1GB） | 低 | 低 | 低 | 低 | 低 |
 
-### 5.2 与 batch 方案（MaxGCPauseMillis=1000）对比
+### 5.2 与原 batch 方案关键差异
 
-| 指标 | Batch 方案 | 实时方案 | 差异原因 |
-|------|-----------|---------|---------|
-| MaxGCPauseMillis | 1000ms | **50ms** | 场景不同 |
-| 最大暂停 | ~200ms | **~50ms** | G1 更努力满足目标 |
-| 吞吐量 | 4,600 ops/s | ~4,200-4,400 ops/s | 略低 ~5%，换来暂停降低 75% |
-| Young GC 频率 | 每 8-12s 一次 | 每 1-3s 一次 | 暂停更短但次数更多 |
-| 实时体验 | ❌ 每次 GC 卡一下 | ✅ 基本无感 | 审计场景的核心诉求 |
-
-> **权衡**: 吞吐量降低 ~5% 换来暂停时间降低 ~75%，对于实时审计是值得的交换。
-
----
-
-## 六、14 进程集群部署策略
-
-### 6.1 部署拓扑
-
-从生产监控数据可知，当前为 **14 进程集群**，每进程 ~750 QPS：
-
-```
-                    ┌──────────────┐
-                    │  C 进程调度层 │
-                    └──────┬───────┘
-          ┌────────────────┼────────────────┐
-          │  14 个 druid-ak JVM 实例        │
-          │  (同机部署，共享 64GB/16核)       │
-          │                                  │
-   ┌──────┴──────┐  ┌──────┴──────┐  ┌──────┴──────┐
-   │ JVM #1      │  │ JVM #2      │  │ JVM #3-14   │
-   │ -Xmx2g      │  │ -Xmx2g      │  │ -Xmx2g      │
-   │ MaxPause=50 │  │ MaxPause=50 │  │ MaxPause=50 │
-   └─────────────┘  └─────────────┘  └─────────────┘
-```
-
-### 6.2 多 JVM 同机部署的特殊参数
-
-当 14 个 JVM 运行在同一台 64GB 机器上时，参数需要额外注意：
-
-```bash
-# 额外参数（14 进程同机场景，每 JVM）
--XX:+AlwaysPreTouch              # 确保物理内存立即分配，避免相互竞争
--XX:+PerfDisableSharedMem        # 避免 /tmp/hsperfdata 文件名冲突
--Djava.io.tmpdir=/data/tmp/$PID  # 每进程独立 tmp 目录（可选）
-```
-
-**14 进程内存预算**（按每 JVM 2GB heap）：
-
-| 项目 | 每 JVM | 14 JVM | 合计 |
-|------|--------|--------|------|
-| JVM Heap | 2 GB | 28 GB | **28 GB** |
-| JVM MetaSpace + 线程栈 + Direct | ~0.5 GB | 7 GB | **7 GB** |
-| OS + C 进程 + Cache | 29 GB | — | **29 GB** |
-| **总计** | | | **64 GB** |
-
-### 6.3 当前瓶颈分析（基于生产监控数据）
-
-生产环境监控分析.md 显示：
-- 每核无缓存吞吐：~700 ops/s
-- 每核缓存命中吞吐：~2,345 ops/s
-- 14 进程总需求：~10,500 QPS
-
-**如果 CPU 高（system > 40%），依次排查**：
-
-```
-Step 1: 确认缓存是否启用 → 查看 DritchSqlMonitor 缓存命中率
-Step 2: 如果命中率 < 30% → 增大 LRU 缓存容量（当前 1000），或检查 cacheKey 设计
-Step 3: 如果命中率 > 70% 但 CPU 仍高 → 检查非 SQL 解析的业务逻辑是否消耗 CPU
-Step 4: 如果 GC 线程占 CPU → 调低 ConcGCThreads 或增大堆
-```
+| 参数 | batch 方案（旧） | 实时方案（新） | 变更原因 |
+|------|----------------|--------------|---------|
+| MaxGCPauseMillis | 1000 | **50** | 实时审计不可容忍长暂停 |
+| Xmx | 1g | **1~6g（分档）** | 多节点实测 used 达 1.4GB |
+| InitiatingHeapOccupancyPercent | 未设(45) | **35** | 提前标记防 Full GC |
+| G1NewSizePercent | 5 | **10~15** | 给 Eden 更多初始空间 |
+| G1ReservePercent | 未设(10) | **15** | 增加 evacuation 缓冲 |
+| 线程-GC 对应 | 未设 | **按档精确配置** | 避免 GC 线程过多/过少 |
+| ZGC 推荐 | 未提及 | **JDK 17+ 推荐** | 暂停 <1ms |
 
 ---
 
-## 七、监控和验证
+## 六、验证方案
 
-### 7.1 启动验证
+### 6.1 启动前检查
 
 ```bash
-# 确认 JVM 参数生效
+# 确认参数生效
 java -XX:+PrintFlagsFinal -version 2>&1 | grep -E \
-  'MaxHeapSize|MaxGCPauseMillis|UseG1GC|ConcGCThreads|StringDeduplication|AlwaysPreTouch'
+  'MaxHeapSize|UseG1GC|MaxGCPauseMillis|InitiatingHeapOccupancyPercent|StringDeduplication|AlwaysPreTouch'
 ```
 
-### 7.2 运行时实时监控
+### 6.2 运行时监控
 
 ```bash
-# GC 实时状态（每 1 秒输出暂停时间）
-jstat -gcutil <pid> 1s
+# GC 实时状态（每 2 秒刷新）
+jstat -gcutil <pid> 2s
+# 关注列：YGC(Young GC次数) YGCT(Young GC总耗时) FGC(Full GC次数, 必须=0)
 
-# 应用暂停时间（关键指标！）
-grep 'Total time for which application threads were stopped' /data/logs/druid/gc.log
+# 堆详情
+jmap -heap <pid>
 
-# 堆使用趋势
-jmap -heap <pid> | grep -E 'Eden|Survivor|Old|used'
+# GC 日志 tail
+tail -f /data/logs/druid/gc.log
 ```
 
-### 7.3 目标指标
+### 6.3 运行后日志分析
 
 ```bash
-# 1. 平均暂停时间 ≤ 50ms
-awk '/Total time.*stopped/ { sum+=$NF; count++ } END { print "Avg STW:", sum/count, "ms" }' /data/logs/druid/gc.log
+GC_LOG=/data/logs/druid/gc.log
 
-# 2. 最大暂停时间
-awk '/Total time.*stopped/ { if($NF > max) max=$NF } END { print "Max STW:", max, "ms" }' /data/logs/druid/gc.log
+# 1. Full GC 次数（必须为 0）
+grep -c 'Pause Full' $GC_LOG
 
-# 3. Full GC 次数（应为 0）
-grep -c 'Pause Full' /data/logs/druid/gc.log
+# 2. Young / Mixed GC 总次数
+grep -cE '\[Pause (Young|Mixed)' $GC_LOG
 
-# 4. 应用吞吐量（应用时间 / 总时间）
-awk '/Total time.*stopped/ { stw+=$NF } END { print "GC overhead:", stw/(stw+$(NF+1))*100, "%" }' /data/logs/druid/gc.log
+# 3. GC 暂停 P50 / P99 / Max
+grep -oP '\d+\.\d+(?=ms)' $GC_LOG | sort -n | awk '
+  { a[NR]=$1 }
+  END {
+    print "P50:", a[int(NR*0.5)], "ms"
+    print "P99:", a[int(NR*0.99)], "ms"
+    print "Max:", a[NR], "ms"
+  }'
+
+# 4. GC 耗时占比
+#    应用总时间从业务日志获取，GC 总时间 = YGCT + MGCT
+```
+
+### 6.4 回归对比清单
+
+调优前后分别收集：
+1. 总处理 SQL 数、ElapsedSpeed / ExecSpeed
+2. `jstat -gcutil` 的 YGC / FGC / GCT
+3. GC 日志 P50 / P99 / Max 暂停
+4. 堆 used / committed 峰值
+5. 应用层 Failure 率 / NonSupport 率
+
+---
+
+## 七、ZGC 深度对比
+
+> ZGC 从 JDK 11 引入，JDK 17+ 生产就绪。档位 XL 场景下强烈推荐。
+
+| 维度 | G1 (MaxPause=50) | ZGC |
+|------|-----------------|-----|
+| 暂停时间 P99 | <50ms | **<1ms** |
+| 与堆大小关系 | 堆越大暂停越长 | **无关** |
+| Full GC | 存在风险 | **不存在** |
+| 吞吐量 | 基准 | -5%~10%（并发阶段开销） |
+| 堆额外开销 | 无 | ~10%（colored pointers） |
+| 配置复杂度 | 需精细调参 | 极低（默认即最优） |
+| 最低 JDK | 8 | 11（推荐 17+） |
+| JDK 21+ 分代 ZGC | — | 吞吐提升 ~10%，暂停仍 <1ms |
+
+**选择建议**：
+- JDK < 11 → G1，无选择
+- JDK 11-16 → ZGC 可用，建议先在测试环境验证
+- JDK 17+ → **ZGC 优先**，尤其是 XL 档
+- 堆 < 2GB → G1 即可，ZGC 堆开销占比偏大
+
+### ZGC 完整参数（JDK 21+ 分代 ZGC）
+
+```bash
+-Xms4g -Xmx6g
+-XX:+UseZGC
+-XX:+ZGenerational          # JDK 21+，吞吐更高
+-XX:ConcGCThreads=2
+-XX:+AlwaysPreTouch
+-XX:+ExitOnOutOfMemoryError
+-Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=100m
 ```
 
 ---
 
-## 八、Q&A
+## 八、FAQ
 
-### Q1: 实时场景为什么不用 ZGC？
+### Q1: MaxGCPauseMillis=50 能做到吗？峰值时会不会超？
 
-**A**: 如果生产环境 JDK ≥ 11，**强烈建议用 ZGC**。但当前项目 `pom.xml` 中 `maven.compiler.source=8`，说明可能仍是 JDK 8 部署。如果你能确认生产已经是 JDK 17+：
+正常负载（~1000-2000 ops/s）下 Young GC 暂停 **20-40ms**，稳定满足。分配尖峰时 G1 会"尽力而为"——可能短期超 50ms 到 60-80ms，但不会像默认 200ms 那样放任。这不是硬上限，而是 G1 的优化目标。
 
-```bash
-# 用 ZGC 代替 G1，参数更简单，暂停 < 1ms
--Xms16g -Xmx16g -XX:+UseZGC -XX:ZAllocationSpikeTolerance=2.0
-```
+### Q2: 固定 Xms=Xmx 会不会浪费内存？
 
-### Q2: MaxGCPauseMillis=50 真的能达到吗？
+C 进程长期独占 JVM，不存在"让出内存给别人"的场景。动态 resize 带来的系统调用（`madvise`/`sbrk`）在实时路径上产生 μs~ms 级抖动，得不偿失。**固定堆 = 零抖动**。
 
-**A**: G1 的 MaxGCPauseMillis 是一个**软目标**（soft real-time），不是硬承诺。实测效果：
+### Q3: 10 亿数据量真的需要 6GB 堆？
 
-- 正常负载（~870 ops/s 持续）：Young GC 暂停 **20-40ms** ✅
-- 峰值负载（~4,426 ops/s）：Young GC 暂停 **40-80ms** ⚠️ 偶尔超 50ms
-- Full GC：理论为 0（无大对象分配）
+数据量 ≠ 同时存活对象量。Druid Parser 是流式的：SQL 进来 → 解析 → 输出模板 → 对象释放。但 LRU 模板缓存 + Druid 框架对象会累积在 Old Gen：
+- 5 亿数据实测 Old Gen 峰值 664MB
+- 10 亿数据 Old Gen 可能 1~1.5GB
+- + Eden 峰值 + Survivor + G1Reserve → 4~6GB 合理
 
-> 如果发现频繁超过 50ms，可以逐步调大到 80ms，或者切 ZGC。
+**实际微调**：部署后观察 GC 日志 `G1 Old Gen` 的 `used` 峰值，若 < 堆的 50%，可适当缩堆。
 
-### Q3: 4 线程只利用 2.8 并发，瓶颈在哪里？
+### Q4: NonSupport 率高的节点要注意什么？
 
-**A**: SQL 解析是纯 CPU 计算，并发 2.8/4.0 = 70% 不是锁竞争导致的，原因排查如下：
+node107（68% NonSupport）和 node116（49% NonSupport）的 SQL 大多被 Druid Parser 快速拒绝，CPU 消耗极低（jvm 5.6%），吞吐虚高（10,600 ops/s）。这类节点的 heap used 反而更低（513MB），因为不产生 AST 对象。
 
-```
-高概率（70%）：SQL 串行到达，生产者来不及塞满队列
-  → 检查 C 调用方是否是串行投递 SQL
-  → 增大 --queue-capacity 20→50
+调优无需针对 NonSupport 做特殊处理——正常节点的参数完全兼容。但如果所有节点 NonSupport 率持续 >50%，应优先排查 SQL 语法兼容性而非 JVM。
 
-中概率（20%）：短 SQL 太多，Druid 解析太快，线程睡醒了没活干
-  → 正常现象，说明 4 线程过剩
-  
-低概率（10%）：热点锁竞争
-  → 用 async-profiler 抓锁
-```
+### Q5: 8GB OS 下 C 进程内存够吗？
 
-### Q4: 为什么不给每个进程 4GB 堆（14×4=56GB）？
+8GB 中 JVM 堆 512MB~1GB + Metaspace 90MB + 线程栈 ~10MB + JVM 自身 ~200MB ≈ 0.8~1.3GB。剩 6.7~7.2GB 给 C 进程 + OS Cache。对于 1-2 亿数据/1 线程场景够用。如 C 进程自身内存需求大，Xmx 可降到 768m。
 
-**A**: 64GB 机器，留 8GB 给 OS + C 进程 + 文件缓存。如果 14 进程每堆 4GB：
+### Q6: GC 日志会不会写满磁盘？
 
-```
-14 × 4GB (heap) + 14 × 0.5GB (非堆) = 63GB JVM 独占 → OS 只剩 1GB
-```
+按 `filecount=5, filesize=50m`，最多 250MB。在 64GB+ 的服务器上忽略不计。日志轮转由 JVM 自动管理，无需外部 logrotate。XL 档用 `filecount=10, filesize=100m`（最多 1GB），因为 10 线程 GC 频率更高。
 
-后果：
-1. OS 开始 swap（退无可退）
-2. C 进程 OOM
-3. OS OOM Killer 随机杀进程
-
-**安全公式**: `单个 JVM Heap ≤ (OS 总内存 - 8GB 安全余量) / JVM 实例数`
-
-### Q5: 出现 Full GC 怎么办？
-
-**A**: G1 在正确配置下 Full GC 概率极低。如果发生：
+### Q7: 出现 Full GC 怎么办？
 
 ```bash
-# 1. 确认 Full GC 触发原因
+# 确认原因
 grep 'Pause Full' /data/logs/druid/gc.log | head -3
 
-# 2. 常见原因和解决：
-#   - 并发标记未完成 → 增大 ConcGCThreads 或调低 InitiatingHeapOccupancyPercent
-#   - 大对象分配 → 检查是否有超大 SQL / 大数组分配
-#   - 元空间满了 → 增大 -XX:MaxMetaspaceSize
-#   - 人为 System.gc() → 检查代码中是否有显式 GC 调用
-
-# 3. 紧急止血
--XX:+DisableExplicitGC     # 禁用 System.gc()
--XX:G1HeapWastePercent=10   # 减少 Mixed GC 周期
-```
-
-### Q6: 为什么最大暂停比 MaxGCPauseMillis=50 大？
-
-**A**: G1 的 MaxGCPauseMillis 是**暂停预测模型的目标值**，不是绝对上限。以下情况暂停可能超额：
-
-| 超限原因 | 典型超限值 | 解决方法 |
-|---------|-----------|---------|
-| Concurrent Mark 未完成，被迫 Full GC | 500ms-几秒 | 调大 ConcGCThreads |
-| Young 区对象存活太多 | 80-150ms | `-XX:G1NewSizePercent=1` 缩小 Young |
-| 分配尖峰突发 | 60-100ms | `-XX:G1MaxNewSizePercent=15` 限制 Young 上限 |
-| 大 Region 扫描 | 略超 | 缩小 G1HeapRegionSize |
-
-### Q7: AlwaysPreTouch 让启动慢了 30 秒怎么办？
-
-**A**: 这是正常的。PreTouch 的本质是用启动时间换运行稳定性：
-
-- 16GB 堆 PreTouch：启动慢 ~15-30 秒
-- 2GB 堆 PreTouch：启动慢 ~2-5 秒
-- 缺失 PreTouch：运行期随机抖动 1-5ms，实时场景不可接受
-
-对于**长驻服务**（7×24h），30 秒启动延迟是值得的。如果实在在意启动时间：
-
-```bash
-# 折中方案：并行 PreTouch（JDK 8u192+）
--XX:+AlwaysPreTouch -XX:+ParallelPreTouch
+# 常见原因及应对：
+# ① 并发标记来不及 → 增大 ConcGCThreads 到 4
+# ② 大对象分配（G1 Humongous）→ 检查是否有超长 SQL
+# ③ 人为 System.gc() → -XX:+DisableExplicitGC
+# ④ Metaspace 满 → jstat -gc 看 MU/MC，调大 MaxMetaspaceSize
 ```
 
 ---
 
-## 九、完整启动命令示例
+## 九、完整启动命令
 
-### 场景 A：64GB 机器，10 线程，JDK 8 + G1（主力）
+### 场景 A：64GB / 10 线程 / JDK 8 / G1（XL 档，兼容性首选）
 
 ```bash
-java -Xms16g -Xmx16g \
-     -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=50 \
-     -XX:G1NewSizePercent=2 \
-     -XX:G1MaxNewSizePercent=20 \
-     -XX:G1HeapRegionSize=4m \
-     -XX:ConcGCThreads=2 \
-     -XX:+ParallelRefProcEnabled \
-     -XX:+UseStringDeduplication \
-     -XX:+AlwaysPreTouch \
-     -XX:+ExitOnOutOfMemoryError \
-     -XX:+PerfDisableSharedMem \
-     -Xloggc:/data/logs/druid/gc.log \
-     -XX:+PrintGCDetails \
-     -XX:+PrintGCDateStamps \
-     -XX:+PrintGCApplicationStoppedTime \
-     -XX:+PrintAdaptiveSizePolicy \
-     -XX:+UseGCLogFileRotation \
-     -XX:NumberOfGCLogFiles=10 \
-     -XX:GCLogFileSize=50m \
-     -jar druid-ak.jar
+java \
+  -Xms4g -Xmx6g \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=50 \
+  -XX:G1HeapRegionSize=4m \
+  -XX:G1NewSizePercent=15 \
+  -XX:G1MaxNewSizePercent=25 \
+  -XX:InitiatingHeapOccupancyPercent=35 \
+  -XX:G1ReservePercent=15 \
+  -XX:ConcGCThreads=2 \
+  -XX:ParallelGCThreads=8 \
+  -XX:+ParallelRefProcEnabled \
+  -XX:+UseStringDeduplication \
+  -XX:+AlwaysPreTouch \
+  -XX:+ExitOnOutOfMemoryError \
+  -XX:+PerfDisableSharedMem \
+  -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=100m \
+  -jar druid-ak.jar
 ```
 
-### 场景 B：64GB 机器，10 线程，JDK 17 + ZGC（最优）
+### 场景 B：64GB / 10 线程 / JDK 17+ / ZGC（XL 档，最优延迟）
 
 ```bash
-java -Xms16g -Xmx16g \
-     -XX:+UseZGC \
-     -XX:ZAllocationSpikeTolerance=2.0 \
-     -XX:ConcGCThreads=2 \
-     -XX:+AlwaysPreTouch \
-     -XX:+ExitOnOutOfMemoryError \
-     -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=50m \
-     -jar druid-ak.jar
+java \
+  -Xms4g -Xmx6g \
+  -XX:+UseZGC \
+  -XX:+ZGenerational \
+  -XX:ConcGCThreads=2 \
+  -XX:+AlwaysPreTouch \
+  -XX:+ExitOnOutOfMemoryError \
+  -XX:+PerfDisableSharedMem \
+  -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=100m \
+  -jar druid-ak.jar
 ```
 
-### 场景 C：16GB 机器，4 线程，JDK 8 + G1（中等配置）
+### 场景 C：16GB / 4 线程 / JDK 8 / G1（M 档，中等配置）
 
 ```bash
-java -Xms4g -Xmx4g \
-     -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=50 \
-     -XX:G1NewSizePercent=5 \
-     -XX:G1MaxNewSizePercent=20 \
-     -XX:G1HeapRegionSize=2m \
-     -XX:ConcGCThreads=1 \
-     -XX:+ParallelRefProcEnabled \
-     -XX:+UseStringDeduplication \
-     -XX:+AlwaysPreTouch \
-     -XX:+ExitOnOutOfMemoryError \
-     -Xloggc:/data/logs/druid/gc.log \
-     -XX:+PrintGCDetails \
-     -XX:+PrintGCDateStamps \
-     -XX:+PrintGCApplicationStoppedTime \
-     -jar druid-ak.jar
+java \
+  -Xms1g -Xmx2g \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=50 \
+  -XX:G1HeapRegionSize=2m \
+  -XX:G1NewSizePercent=10 \
+  -XX:G1MaxNewSizePercent=25 \
+  -XX:InitiatingHeapOccupancyPercent=35 \
+  -XX:G1ReservePercent=15 \
+  -XX:ConcGCThreads=2 \
+  -XX:ParallelGCThreads=4 \
+  -XX:+ParallelRefProcEnabled \
+  -XX:+UseStringDeduplication \
+  -XX:+AlwaysPreTouch \
+  -XX:+ExitOnOutOfMemoryError \
+  -XX:+PerfDisableSharedMem \
+  -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=5,filesize=50m \
+  -jar druid-ak.jar
+```
+
+### 场景 D：8GB / 1 线程 / JDK 8 / G1（S 档，小内存）
+
+```bash
+java \
+  -Xms512m -Xmx1g \
+  -XX:+UseG1GC \
+  -XX:MaxGCPauseMillis=50 \
+  -XX:G1HeapRegionSize=1m \
+  -XX:G1NewSizePercent=15 \
+  -XX:G1MaxNewSizePercent=30 \
+  -XX:InitiatingHeapOccupancyPercent=40 \
+  -XX:G1ReservePercent=15 \
+  -XX:ConcGCThreads=1 \
+  -XX:ParallelGCThreads=1 \
+  -XX:+ParallelRefProcEnabled \
+  -XX:+UseStringDeduplication \
+  -XX:+AlwaysPreTouch \
+  -XX:+ExitOnOutOfMemoryError \
+  -XX:+PerfDisableSharedMem \
+  -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=5,filesize=50m \
+  -jar druid-ak.jar
 ```
 
 ---
 
-## 十、与 batch 方案的对比总结
+## 十、非 JVM 优化方向
 
-| 维度 | Batch 方案（旧） | 实时方案（新） | 为什么变 |
-|------|----------------|--------------|---------|
-| **场景** | 批处理 3h 跑完 | **7×24 实时审计** | req.md 明确实时 |
-| **MaxGCPauseMillis** | 1000 | **50** | 实时不能卡 |
-| **堆大小** | 1GB 固定 | **按硬件 25%** | 14 进程集群需计算 |
-| **Young Max** | 15% | **20%** | 更多空间抗峰值 |
-| **ConcGCThreads** | 默认 | **显式设 2** | 控制并发标记 CPU |
-| **GC 日志** | 简化 | **完整 (STW+Adaptive)** | 问题排查需要 |
-| **ZGC** | 未提及 | **JDK17+ 强烈推荐** | 暂停 <1ms |
-| **部署** | 单 JVM | **14 进程集群** | 生产环境实际 |
-| **Full GC 防护** | 无 | **ExitOnOOMError** | C 调用方需要 |
-| **PerfDisableSharedMem** | 无 | **有** | 多 JVM 同机避免冲突 |
+JVM 参数调优只解决 GC 暂停问题。如果吞吐量或 CPU 是瓶颈，优先级更高的是：
 
----
-
-## 十一、更高收益的优化方向（非 JVM）
-
-| 优先级 | 优化项 | 预期收益 | 难度 | 说明 |
-|--------|--------|---------|------|------|
-| **P0** | 启用 LRU 缓存 | 吞吐 +10-20% | 低 | `--cache` |
-| **P0** | 确认缓存命中率 ≥ 70% | CPU -50% | 中 | 检查 cacheKey 设计 |
-| **P1** | 升级 JDK 17 + ZGC | 暂停 < 1ms | 中 | 需验证兼容性 |
-| **P2** | 增大每秒投递量 | 并发度 ↑ | 中 | C 调用方是否串行投递？ |
-| **P3** | CPU 亲和性 (`taskset`) | 减少上下文切换 | 低 | 14 进程隔离核 |
-
-> **最大杠杆是 P0**：确保 LRU 缓存部署且命中率 > 70%。否则 ~750 QPS/进程 需要 1 个满核，14 进程 × 1 核 = 14 核 CPU 饱和是物理限制，JVM 调优救不了。
+| 优先级 | 优化项 | 预期收益 | 说明 |
+|--------|--------|---------|------|
+| **P0** | 启用 LRU 缓存 | 吞吐 +10~30%，CPU -30~50% | 缓存命中后免解析 |
+| **P0** | 增大线程数（按 OS 内存梯度） | 吞吐随线程线性增长 | 当前 4 线程 CPU 才用 ~25% |
+| **P1** | 升级 JDK 17 + ZGC | 暂停 <1ms | 需验证 druid-ak 兼容性 |
+| **P2** | 检查 C 调用方是否串行投递 SQL | 提升并发度 | 并发 2.8/4.0 = 70%，队列没塞满 |
+| **P3** | CPU 亲和性（`taskset`） | 减少上下文切换 ~5% | 多 JVM 同机部署时有效 |
 
 ---
 
 *文档生成时间：2026-06-08*
-*数据来源：req.md / 生产环境监控分析 / v4 综合性能测试报告 / run-perf.sh*
+*数据来源：req.md 中 node62/107/116/135/160/203 共 6 节点监控 + 现场环境验证数据*
 *适用版本：druid-ak-1.2.27*
-*作者：基于真实数据重写，修正了之前 batch 方案的场景误判*
