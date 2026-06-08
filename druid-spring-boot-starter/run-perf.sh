@@ -52,26 +52,23 @@ DB_NAME_CK=bs_audit
 DB_USER_CK=root
 
 # JVM 参数（实时审计场景调优，暂停目标 50ms，基于 5千万级 SQL 解析实测数据）
-# 不同硬件配置请参考 docs/perf_param/JVM调优方案.md
+# 不同硬件配置请参考 docs/perf_param/JVM调优方案-v1.md
 JVM_OPTS="-Xms2g -Xmx2g"
 JVM_OPTS="$JVM_OPTS -XX:+UseG1GC"
 JVM_OPTS="$JVM_OPTS -XX:MaxGCPauseMillis=50"
-JVM_OPTS="$JVM_OPTS -XX:G1NewSizePercent=5"
-JVM_OPTS="$JVM_OPTS -XX:G1MaxNewSizePercent=20"
-JVM_OPTS="$JVM_OPTS -XX:G1HeapRegionSize=1m"
+JVM_OPTS="$JVM_OPTS -XX:G1NewSizePercent=10"
+JVM_OPTS="$JVM_OPTS -XX:G1MaxNewSizePercent=25"
+JVM_OPTS="$JVM_OPTS -XX:G1HeapRegionSize=2m"
 JVM_OPTS="$JVM_OPTS -XX:ConcGCThreads=2"
+JVM_OPTS="$JVM_OPTS -XX:ParallelGCThreads=4"
+JVM_OPTS="$JVM_OPTS -XX:InitiatingHeapOccupancyPercent=35"
+JVM_OPTS="$JVM_OPTS -XX:G1ReservePercent=15"
 JVM_OPTS="$JVM_OPTS -XX:+ParallelRefProcEnabled"
 JVM_OPTS="$JVM_OPTS -XX:+UseStringDeduplication"
 JVM_OPTS="$JVM_OPTS -XX:+AlwaysPreTouch"
 JVM_OPTS="$JVM_OPTS -XX:+ExitOnOutOfMemoryError"
-JVM_OPTS="$JVM_OPTS -Xloggc:/data/logs/druid/gc.log"
-JVM_OPTS="$JVM_OPTS -XX:+PrintGCDetails"
-JVM_OPTS="$JVM_OPTS -XX:+PrintGCDateStamps"
-JVM_OPTS="$JVM_OPTS -XX:+PrintGCApplicationStoppedTime"
-JVM_OPTS="$JVM_OPTS -XX:+PrintAdaptiveSizePolicy"
-JVM_OPTS="$JVM_OPTS -XX:+UseGCLogFileRotation"
-JVM_OPTS="$JVM_OPTS -XX:NumberOfGCLogFiles=10"
-JVM_OPTS="$JVM_OPTS -XX:GCLogFileSize=50m"
+JVM_OPTS="$JVM_OPTS -XX:+PerfDisableSharedMem"
+JVM_OPTS="$JVM_OPTS -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=50m"
 
 # JAR 路径（相对或绝对）
 JAR_FILE="druid-spring-boot-starter-1.2.27.jar"
