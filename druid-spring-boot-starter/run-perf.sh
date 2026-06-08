@@ -51,8 +51,27 @@ DB_PORT_CK=8123
 DB_NAME_CK=bs_audit
 DB_USER_CK=root
 
-# JVM 参数
-JVM_OPTS="-Xms1g -Xmx2g -XX:+UseG1GC"
+# JVM 参数（实时审计场景调优，暂停目标 50ms，基于 5千万级 SQL 解析实测数据）
+# 不同硬件配置请参考 docs/perf_param/JVM调优方案.md
+JVM_OPTS="-Xms2g -Xmx2g"
+JVM_OPTS="$JVM_OPTS -XX:+UseG1GC"
+JVM_OPTS="$JVM_OPTS -XX:MaxGCPauseMillis=50"
+JVM_OPTS="$JVM_OPTS -XX:G1NewSizePercent=5"
+JVM_OPTS="$JVM_OPTS -XX:G1MaxNewSizePercent=20"
+JVM_OPTS="$JVM_OPTS -XX:G1HeapRegionSize=1m"
+JVM_OPTS="$JVM_OPTS -XX:ConcGCThreads=2"
+JVM_OPTS="$JVM_OPTS -XX:+ParallelRefProcEnabled"
+JVM_OPTS="$JVM_OPTS -XX:+UseStringDeduplication"
+JVM_OPTS="$JVM_OPTS -XX:+AlwaysPreTouch"
+JVM_OPTS="$JVM_OPTS -XX:+ExitOnOutOfMemoryError"
+JVM_OPTS="$JVM_OPTS -Xloggc:/data/logs/druid/gc.log"
+JVM_OPTS="$JVM_OPTS -XX:+PrintGCDetails"
+JVM_OPTS="$JVM_OPTS -XX:+PrintGCDateStamps"
+JVM_OPTS="$JVM_OPTS -XX:+PrintGCApplicationStoppedTime"
+JVM_OPTS="$JVM_OPTS -XX:+PrintAdaptiveSizePolicy"
+JVM_OPTS="$JVM_OPTS -XX:+UseGCLogFileRotation"
+JVM_OPTS="$JVM_OPTS -XX:NumberOfGCLogFiles=10"
+JVM_OPTS="$JVM_OPTS -XX:GCLogFileSize=50m"
 
 # JAR 路径（相对或绝对）
 JAR_FILE="druid-spring-boot-starter-1.2.27.jar"
@@ -150,7 +169,7 @@ while [ $# -gt 0 ]; do
             echo "  --db-host <host>            MySQL主机地址 (default: 172.19.4.41)"
             echo "  --db-host-ck <host>         ClickHouse主机地址 (default: 172.19.4.41)"
             echo "  --db-user <user>            数据库用户名 (default: sroot)"
-            echo "  --jvm '<opts>'              JVM参数 (default: -Xms1g -Xmx4g -XX:+UseG1GC)"
+            echo "  --jvm '<opts>'              JVM参数 (default: -Xms1g -Xmx1g -XX:+UseG1GC ...)"
             echo "  --jar <path>                JAR文件路径"
             echo "  --monitor                   启用SQL模板监控"
             echo "  --no-monitor                禁用SQL模板监控 (default)"
