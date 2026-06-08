@@ -1,217 +1,186 @@
+# Druid-ak SQL 解析实时审计场景 — 需求文档
 
-## 目标
-需要为 druid-ak 定义一些启动参数，以调优； 给出jvm参数的调优建议(方向+参数+示例)；
-依据jvm的堆内存结构+业务场景； 先给出总体方向思路， 然后再集合当前已有数据，展开分析。给出建议
+> **文档定位**：本文档定义 JVM 参数调优的**需求（What/Why）**，而非实现方案（How）。调优方案见同级 `JVM参数调优建议.md` 和 `JVM调优方案-v2.md`。
+> **适用版本**：druid-ak-1.2.27
+> **数据截止**：2026-06-08
 
-## 业务背景
-druid-ak是依据alibaba的druid框架为依据， 做SQL解析得到SQL模板(预编译语句)的工具jar包。
-1. c程序 将druid-ak.jar在一个环境中启动， 然后多线程调用（1-10个线程）；
-2. 业务场景为数据库的操作语句审计
-3. 业务数据量在1-2亿/每天（1100-2350 SQL/s），以及3-5亿/每天(3500-5800 SQL/s)； 最大的情况可能会有10亿/每天(11600 SQL/s)；依据设备硬件配置
+---
 
+## 一、业务场景
 
-### 要求
-1. gc的时间尽量短，因为审计操作日志是实时的。
-2. 线程启动个数 依据操作系统的内存容量设置，8G-1线程，16G-4线程，32G-4线程，64G-128G启10线程；  内存还有其他程序使用， 不是单独给druid-ak的。
+### 1.1 一句话描述
 
-## 内存参数计算
-是否可以依据 SQL/s + 并发数 + SQL长度 来估算JVM内存参数？
-eg: (2500 |5000 |7500 |10000) sql/s) * (1-4-10) * 500 avgLen
+> C 程序在一个环境中启动 druid-ak.jar，多线程（1~10 个线程）调用 Druid SQL Parser 做 SQL 解析 → 提取模板（预编译语句），用于数据库操作语句的**实时审计**。
 
-## 监控数据
-注意： a.采集的监控数据，内存+cpu使用不够准确。有很大一部分比例是数据采集给druid-ak.jar喂数据使用了（PerfTestCofig,不间断的从审计表中查询数据，其中还有Queue队列缓存）。
-疑似某重复性很高的SQL，可能 Xmx=128m, 曾经处理过 7000 avgLen  9亿/天 ； 只不过有一些性能问题，影响到了审计。。。
+### 1.2 与典型批处理的区别
 
-监控数据， 不完全等价实际场景，是通过java工程引入后，从审计表中获取SQL后，调用durid-ak来解析的。 有性能+资源的额外损耗，仅供参考。
-汇总数据：都是这只的4个线程
- TotalCalls表示调用的次数，Failure表示失败的次数，Success表示成功的次数
- ExecSpeed=1945.87 ops/s 表示 执行总次数/执行总时间, 其中方法执行总时间，有并发执行的情况；
- ElapsedSpeed=7758.28 ops/s 表示 执行总次数/启动后过去的总时间，同样性能损耗；
+| 维度 | 批处理（典型） | 本场景 |
+|------|-------------|--------|
+| 运行模式 | 定时触发，跑完退出 | **7×24 常驻** |
+| 时效要求 | 小时级完成即可 | **实时审计，GC 暂停直接影响审计延迟** |
+| 数据流 | 固定批次 | 持续流入，每秒不等 |
+| 失败影响 | 可重跑 | **漏审/延迟审计 = 合规风险** |
 
-处理结果：
-[Failure   ] n=15423                | elapsed=25780004            ms | exec=3042                ms | avgLen=5790   | speed(exec/elapsed)=  5069.3/     0.6 ops/s | concurrency=0.0
-n=15423， 表示执行的次数，avgLen=5790，表示平均SQL长度，concurrency=0.0，表示并发数（通过exec/elapsed估算的）
+### 1.3 关键约束
 
+| 约束 | 详情 |
+|------|------|
+| **实时性** | 审计日志是实时的，GC STW 暂停会阻塞 SQL 处理，延迟直接影响审计时效 |
+| **内存共享** | JVM 与其他程序共享 OS 内存，不能独占。线程数按 OS 内存梯度设置（见后） |
+| **部署形态** | druid-ak 以 jar 包被 C 进程调用（`Runtime.exec` / JNI），非独立 Java 应用 |
+| **JDK 版本** | 现场环境以 OpenJDK 8 为主，部分可升级至 17+ |
 
-### node62
-TotalCalls=200008614 | Failure=15423(0.01%) Success=199864083(99.93%) NonSupport=129108(0.06%) EXCEPTION=0(0.00%) | ExecSpeed=1945.87 ops/s | ElapsedSpeed=7758.28 ops/s
-OS CPU[cores=16, system=36.0%, jvm_process=25.1%, processCpuTime=104440630ms]
-OS Memory(total=62.8 GB, free=1.2 GB) | Swap(total=0 B, free=0 B)
-JVM Heap(Xms/Xmx): 1.0 GB/2.0 GB | Heap(used/committed): 1.1 GB/1.7 GB | NonHeap(used): 88.2 MB | Free/Total: 606.9 MB/1.7 GB
-JVM Heap Pools: G1 Eden Space(used=680.0 MB, committed=1.1 GB, max=N/A) G1 Survivor Space(used=3.0 MB, committed=3.0 MB, max=N/A) G1 Old Gen(used=422.2 MB, committed=634.0 MB, max=2.0 GB)
-JVM Threads: live=22, peak=24, daemon=21
-[Failure   ] n=15423                | elapsed=25780004            ms | exec=3042                ms | avgLen=5790   | speed(exec/elapsed)=  5069.3/     0.6 ops/s | concurrency=0.0
-<50μs     : 560                  (  3.6%) [>20K     ops/s]
-50-67μs   : 438                  (  2.8%) [15K-20K  ops/s]
-67-100μs  : 1061                 (  6.9%) [10K-15K  ops/s]
-100-133μs : 6336                 ( 41.1%) [7.5K-10K ops/s]
-133-200μs : 3973                 ( 25.8%) [5K-7.5K  ops/s]
-200-400μs : 2634                 ( 17.1%) [2.5K-5K  ops/s]
-400μs-1ms : 152                  (  1.0%) [1K-2.5K  ops/s]
-1-2ms     : 67                   (  0.4%) [500-1K   ops/s]
->2ms      : 202                  (  1.3%) [<500     ops/s]
-[Success   ] n=199864083            | elapsed=25780004            ms | exec=102782963           ms | avgLen=377    | speed(exec/elapsed)=  1944.5/  7752.7 ops/s | concurrency=4.0
-<50μs     : 51593939             ( 25.8%) [>20K     ops/s]
-50-67μs   : 1569                 (  0.0%) [15K-20K  ops/s]
-67-100μs  : 3931                 (  0.0%) [10K-15K  ops/s]
-100-133μs : 7295                 (  0.0%) [7.5K-10K ops/s]
-133-200μs : 12866                (  0.0%) [5K-7.5K  ops/s]
-200-400μs : 28431                (  0.0%) [2.5K-5K  ops/s]
-400μs-1ms : 140571256            ( 70.3%) [1K-2.5K  ops/s]
-1-2ms     : 7156894              (  3.6%) [500-1K   ops/s]
->2ms      : 487902               (  0.2%) [<500     ops/s]
+---
 
-### node203
-TotalCalls=499961592 | Failure=193867(0.04%) Success=498912121(99.79%) NonSupport=855604(0.17%) EXCEPTION=0(0.00%) | ExecSpeed=1810.53 ops/s | ElapsedSpeed=7212.37 ops/s
-OS CPU[cores=16, system=37.0%, jvm_process=25.2%, processCpuTime=278996810ms]
-OS Memory(total=62.8 GB, free=755.6 MB) | Swap(total=0 B, free=0 B)
-JVM Heap(Xms/Xmx): 1.0 GB/2.0 GB | Heap(used/committed): 1.4 GB/1.9 GB | NonHeap(used): 88.8 MB | Free/Total: 471.0 MB/1.9 GB
-JVM Heap Pools: G1 Eden Space(used=860.0 MB, committed=1.1 GB, max=N/A) G1 Survivor Space(used=47.0 MB, committed=47.0 MB, max=N/A) G1 Old Gen(used=562.0 MB, committed=747.0 MB, max=2.0 GB)
-JVM Threads: live=24, peak=24, daemon=22
-[Failure   ] n=193867               | elapsed=69320002            ms | exec=23383               ms | avgLen=293    | speed(exec/elapsed)=  8290.8/     2.8 ops/s | concurrency=0.0
-<50μs     : 71528                ( 36.9%) [>20K     ops/s]
-50-67μs   : 8154                 (  4.2%) [15K-20K  ops/s]
-67-100μs  : 29891                ( 15.4%) [10K-15K  ops/s]
-100-133μs : 62154                ( 32.1%) [7.5K-10K ops/s]
-133-200μs : 8911                 (  4.6%) [5K-7.5K  ops/s]
-200-400μs : 1990                 (  1.0%) [2.5K-5K  ops/s]
-400μs-1ms : 10683                (  5.5%) [1K-2.5K  ops/s]
-1-2ms     : 414                  (  0.2%) [500-1K   ops/s]
->2ms      : 142                  (  0.1%) [<500     ops/s]
-[Success   ] n=498912123            | elapsed=69320002            ms | exec=276117894           ms | avgLen=405    | speed(exec/elapsed)=  1806.9/  7197.2 ops/s | concurrency=4.0
-<50μs     : 96230721             ( 19.3%) [>20K     ops/s]
-50-67μs   : 2489                 (  0.0%) [15K-20K  ops/s]
-67-100μs  : 1843                 (  0.0%) [10K-15K  ops/s]
-100-133μs : 699                  (  0.0%) [7.5K-10K ops/s]
-133-200μs : 469                  (  0.0%) [5K-7.5K  ops/s]
-200-400μs : 163488               (  0.0%) [2.5K-5K  ops/s]
-400μs-1ms : 381000786            ( 76.4%) [1K-2.5K  ops/s]
-1-2ms     : 20133843             (  4.0%) [500-1K   ops/s]
->2ms      : 1377785              (  0.3%) [<500     ops/s]
+## 二、容量需求
 
+### 2.1 数据量与吞吐量
 
-### node107
-TotalCalls=499930000 | Failure=674256(0.13%) Success=161742112(32.35%) NonSupport=337513632(67.51%) EXCEPTION=0(0.00%) | ExecSpeed=3165.03 ops/s | ElapsedSpeed=10611.97 ops/s
-OS CPU[cores=16, system=46.0%, jvm_process=5.6%, processCpuTime=160728830ms]
-OS Memory(total=62.7 GB, free=4.3 GB) | Swap(total=0 B, free=0 B)
-JVM Heap(Xms/Xmx): 1.0 GB/2.0 GB | Heap(used/committed): 513.2 MB/2.0 GB | NonHeap(used): 85.5 MB | Free/Total: 1.5 GB/2.0 GB
-JVM Heap Pools: G1 Eden Space(used=41.0 MB, committed=1.2 GB, max=N/A) G1 Survivor Space(used=7.0 MB, committed=7.0 MB, max=N/A) G1 Old Gen(used=465.2 MB, committed=748.0 MB, max=2.0 GB)
-JVM Threads: live=24, peak=24, daemon=22
-[Failure   ] n=674256               | elapsed=47110004            ms | exec=122302              ms | avgLen=4579   | speed(exec/elapsed)=  5513.0/    14.3 ops/s | concurrency=0.0
-<50μs     : 1321                 (  0.2%) [>20K     ops/s]
-50-67μs   : 757                  (  0.1%) [15K-20K  ops/s]
-67-100μs  : 17278                (  2.6%) [10K-15K  ops/s]
-100-133μs : 234355               ( 34.8%) [7.5K-10K ops/s]
-133-200μs : 259790               ( 38.5%) [5K-7.5K  ops/s]
-200-400μs : 144147               ( 21.4%) [2.5K-5K  ops/s]
-400μs-1ms : 16099                (  2.4%) [1K-2.5K  ops/s]
-1-2ms     : 299                  (  0.0%) [500-1K   ops/s]
->2ms      : 210                  (  0.0%) [<500     ops/s]
-[Success   ] n=161742112            | elapsed=47110004            ms | exec=157736377           ms | avgLen=289    | speed(exec/elapsed)=  1025.4/  3433.3 ops/s | concurrency=3.3
-<50μs     : 7372027              (  4.6%) [>20K     ops/s]
-50-67μs   : 972                  (  0.0%) [15K-20K  ops/s]
-67-100μs  : 674                  (  0.0%) [10K-15K  ops/s]
-100-133μs : 255                  (  0.0%) [7.5K-10K ops/s]
-133-200μs : 270                  (  0.0%) [5K-7.5K  ops/s]
-200-400μs : 85                   (  0.0%) [2.5K-5K  ops/s]
-400μs-1ms : 103742427            ( 64.1%) [1K-2.5K  ops/s]
-1-2ms     : 49112252             ( 30.4%) [500-1K   ops/s]
->2ms      : 1513150              (  0.9%) [<500     ops/s]
+| 等级 | 日处理量 | 峰值 SQL/s | 说明 |
+|------|---------|-----------|------|
+| 常规 | 1~2 亿/天 | 1,100~2,350 | 低配设备 |
+| 中高 | 3~5 亿/天 | 3,500~5,800 | 主流场景 |
+| 峰值 | **10 亿/天** | **~11,600** | 高配设备上限 |
 
+### 2.2 SQL 特征
 
-### node135
-TotalCalls=500006462 | Failure=42456(0.01%) Success=499964006(99.99%) NonSupport=0(0.00%) EXCEPTION=0(0.00%) | ExecSpeed=1966.89 ops/s | ElapsedSpeed=7842.01 ops/s
-OS CPU[cores=16, system=37.5%, jvm_process=25.5%, processCpuTime=259893840ms]
-OS Memory(total=62.8 GB, free=882.7 MB) | Swap(total=0 B, free=0 B)
-JVM Heap(Xms/Xmx): 1.0 GB/2.0 GB | Heap(used/committed): 923.3 MB/1.8 GB | NonHeap(used): 90.0 MB | Free/Total: 909.7 MB/1.8 GB
-JVM Heap Pools: G1 Eden Space(used=257.0 MB, committed=1.0 GB, max=N/A) G1 Survivor Space(used=3.0 MB, committed=3.0 MB, max=N/A) G1 Old Gen(used=664.3 MB, committed=803.0 MB, max=2.0 GB)
-JVM Threads: live=22, peak=23, daemon=21
-[Failure   ] n=42456                | elapsed=63760002            ms | exec=5726                ms | avgLen=1607   | speed(exec/elapsed)=  7414.0/     0.7 ops/s | concurrency=0.0
-<67μs     : 6303                 ( 14.8%) [>15K     ops/s]
-67-100μs  : 10279                ( 24.2%) [10-15K   ops/s]
-100-133μs : 9882                 ( 23.3%) [7.5-10K  ops/s]
-133-200μs : 13173                ( 31.0%) [5-7.5K   ops/s]
-200-333μs : 2153                 (  5.1%) [3-5K     ops/s]
-333-500μs : 305                  (  0.7%) [2-3K     ops/s]
-500-667μs : 203                  (  0.5%) [1.5-2K   ops/s]
-667μs-1ms : 72                   (  0.2%) [1-1.5K   ops/s]
-1-2ms     : 63                   (  0.1%) [500-1K   ops/s]
->2ms      : 23                   (  0.1%) [<500     ops/s]
-[Success   ] n=499964008            | elapsed=63760002            ms | exec=254205387           ms | avgLen=198    | speed(exec/elapsed)=  1966.8/  7841.3 ops/s | concurrency=4.0
-<67μs     : 96398904             ( 19.3%) [>15K     ops/s]
-67-100μs  : 67956                (  0.0%) [10-15K   ops/s]
-100-133μs : 95597                (  0.0%) [7.5-10K  ops/s]
-133-200μs : 104077               (  0.0%) [5-7.5K   ops/s]
-200-333μs : 15384                (  0.0%) [3-5K     ops/s]
-333-500μs : 114234330            ( 22.8%) [2-3K     ops/s]
-500-667μs : 222715319            ( 44.5%) [1.5-2K   ops/s]
-667μs-1ms : 51719131             ( 10.3%) [1-1.5K   ops/s]
-1-2ms     : 13493130             (  2.7%) [500-1K   ops/s]
->2ms      : 1120180              (  0.2%) [<500     ops/s]
+| 指标 | 最小值 | 中位 | 最大值 |
+|------|--------|------|--------|
+| 成功 SQL 平均长度 | 140 B | ~400 B | ~778 B |
+| 失败 SQL 平均长度 | — | ~1,300~26,000 B | — |
+| NonSupport 比例 | ~0% | ~0.06~0.22% | ~68%（特定节点） |
+| 模板重复率 | — | 高 | 极高（特定场景可 Xmx=128m 支撑） |
 
+> NonSupport 指 Druid Parser 不支持的 SQL 语法，走快速失败路径（不构建 AST），对内存压力小。
 
-### node160
-TotalCalls=499956069 | Failure=114489(0.02%) Success=498732700(99.76%) NonSupport=1108880(0.22%) EXCEPTION=0(0.00%) | ExecSpeed=1960.57 ops/s | ElapsedSpeed=5385.14 ops/s
-OS CPU[cores=16, system=43.8%, jvm_process=25.6%, processCpuTime=267722810ms]
-OS Memory(total=62.8 GB, free=625.7 MB) | Swap(total=0 B, free=0 B)
-JVM Heap(Xms/Xmx): 1.0 GB/2.0 GB | Heap(used/committed): 578.2 MB/2.0 GB | NonHeap(used): 86.2 MB | Free/Total: 1.4 GB/2.0 GB
-JVM Heap Pools: G1 Eden Space(used=273.0 MB, committed=884.0 MB, max=N/A) G1 Survivor Space(used=38.0 MB, committed=38.0 MB, max=N/A) G1 Old Gen(used=267.2 MB, committed=1.1 GB, max=2.0 GB)
-JVM Threads: live=24, peak=25, daemon=22
-[Failure   ] n=114489               | elapsed=92840003            ms | exec=38729               ms | avgLen=26584  | speed(exec/elapsed)=  2956.1/     1.2 ops/s | concurrency=0.0
-<50μs     : 92                   (  0.1%) [>20K     ops/s]
-50-67μs   : 546                  (  0.5%) [15K-20K  ops/s]
-67-100μs  : 3409                 (  3.0%) [10K-15K  ops/s]
-100-133μs : 37968                ( 33.2%) [7.5K-10K ops/s]
-133-200μs : 30209                ( 26.4%) [5K-7.5K  ops/s]
-200-400μs : 7529                 (  6.6%) [2.5K-5K  ops/s]
-400μs-1ms : 32382                ( 28.3%) [1K-2.5K  ops/s]
-1-2ms     : 2124                 (  1.9%) [500-1K   ops/s]
->2ms      : 230                  (  0.2%) [<500     ops/s]
-[Success   ] n=498732702            | elapsed=92840002            ms | exec=254966208           ms | avgLen=512    | speed(exec/elapsed)=  1956.1/  5372.0 ops/s | concurrency=2.7
-<50μs     : 94114421             ( 18.9%) [>20K     ops/s]
-50-67μs   : 2130                 (  0.0%) [15K-20K  ops/s]
-67-100μs  : 1469                 (  0.0%) [10K-15K  ops/s]
-100-133μs : 583                  (  0.0%) [7.5K-10K ops/s]
-133-200μs : 423                  (  0.0%) [5K-7.5K  ops/s]
-200-400μs : 2524727              (  0.5%) [2.5K-5K  ops/s]
-400μs-1ms : 396680911            ( 79.5%) [1K-2.5K  ops/s]
-1-2ms     : 4582485              (  0.9%) [500-1K   ops/s]
->2ms      : 825553               (  0.2%) [<500     ops/s]
+### 2.3 线程-内存映射（硬约束）
 
-### node116
-TotalCalls=499958050 | Failure=651086(0.13%) Success=253530711(50.71%) NonSupport=245776253(49.16%) EXCEPTION=0(0.00%) | ExecSpeed=3077.17 ops/s | ElapsedSpeed=10327.58 ops/s
-OS CPU[cores=16, system=56.4%, jvm_process=22.1%, processCpuTime=169124430ms]
-OS Memory(total=62.8 GB, free=20.2 GB) | Swap(total=0 B, free=0 B)
-JVM Heap(Xms/Xmx): 1.0 GB/2.0 GB | Heap(used/committed): 1.2 GB/2.0 GB | NonHeap(used): 90.3 MB | Free/Total: 826.2 MB/2.0 GB
-JVM Heap Pools: G1 Eden Space(used=761.0 MB, committed=1.2 GB, max=N/A) G1 Survivor Space(used=27.0 MB, committed=27.0 MB, max=N/A) G1 Old Gen(used=432.3 MB, committed=758.0 MB, max=2.0 GB)
-JVM Threads: live=23, peak=23, daemon=21
-[Failure   ] n=651086               | elapsed=48410002            ms | exec=191180              ms | avgLen=8579   | speed(exec/elapsed)=  3405.6/    13.4 ops/s | concurrency=0.0
-<67μs     : 165795               ( 25.5%) [>15K     ops/s]
-67-100μs  : 149342               ( 22.9%) [10-15K   ops/s]
-100-133μs : 62169                (  9.5%) [7.5-10K  ops/s]
-133-200μs : 23646                (  3.6%) [5-7.5K   ops/s]
-200-333μs : 37776                (  5.8%) [3-5K     ops/s]
-333-500μs : 37689                (  5.8%) [2-3K     ops/s]
-500-667μs : 94990                ( 14.6%) [1.5-2K   ops/s]
-667μs-1ms : 71542                ( 11.0%) [1-1.5K   ops/s]
-1-2ms     : 7485                 (  1.1%) [500-1K   ops/s]
->2ms      : 652                  (  0.1%) [<500     ops/s]
-[Success   ] n=253530712            | elapsed=48410002            ms | exec=162229453           ms | avgLen=778    | speed(exec/elapsed)=  1562.8/  5237.2 ops/s | concurrency=3.4
-<67μs     : 10432869             (  4.1%) [>15K     ops/s]
-67-100μs  : 724                  (  0.0%) [10-15K   ops/s]
-100-133μs : 257                  (  0.0%) [7.5-10K  ops/s]
-133-200μs : 135                  (  0.0%) [5-7.5K   ops/s]
-200-333μs : 47                   (  0.0%) [3-5K     ops/s]
-333-500μs : 31762635             ( 12.5%) [2-3K     ops/s]
-500-667μs : 145844444            ( 57.5%) [1.5-2K   ops/s]
-667μs-1ms : 58898262             ( 23.2%) [1-1.5K   ops/s]
-1-2ms     : 5972152              (  2.4%) [500-1K   ops/s]
->2ms      : 619187               (  0.2%) [<500     ops/s]
+| OS 内存 | 线程数 | 说明 |
+|---------|--------|------|
+| 8 GB | 1 | 内存最小场景 |
+| 16 GB | 4 | 中等配置 |
+| 32 GB | 4 | 中等配置（内存余量大） |
+| 64~128 GB | 10 | 高配场景 |
 
+> 内存并非全部分配给 JVM，其他程序共用。
 
+---
 
-现场环境验证监控数据为：
-[Failure   ] sqlTotal=175523                | elapsed=11460002            ms | exec=10240               ms | avgLen=1338   | speed(exec/elapsed)= 17140.8/    15.3 ops/s | concurrency=0.0                                       
-[Success   ] sqlTotal=50728047             | elapsed=11460002            ms | exec=31572046            ms | avgLen=140    | speed(exec/elapsed)=  1606.7/  4426.5 ops/s | concurrency=2.8  
+## 三、性能需求
 
+### 3.1 延迟需求（核心）
 
+| 指标 | 需求值 | 理由 |
+|------|--------|------|
+| GC STW 暂停 P99 | **< 50 ms** | 实时审计不可容忍长暂停 |
+| GC STW 暂停 Max | **< 100 ms** | 避免审计窗口断档 |
+| Full GC 发生次数 | **= 0（运行期间）** | Full GC 暂停秒级，不可接受 |
+| SQL 解析 P99 延迟 | < 2 ms | 维持整体审计流水线吞吐 |
+
+> **量化依据**：按 5,000 ops/s 算，50 ms 暂停阻塞约 250 条 SQL；按 1,000 ops/s 算约 50 条。均可在恢复后快速追回。
+
+### 3.2 吞吐量需求
+
+| 指标 | 需求 | 衡量方式 |
+|------|------|---------|
+| ExecSpeed | 匹配或超过业务 SQL/s 峰值 | 与当前节点基线对比 |
+| ElapsedSpeed | 不出现持续下降（内存泄漏迹象） | 长期运行稳定性 |
+| CPU % | 不显著高于当前基线（~25% / 16核） | 避免影响 C 宿主 |
+
+### 3.3 稳定性需求
+
+| 需求 | 说明 |
+|------|------|
+| 7×24 无重启 | 不因 JVM 问题导致进程退出（OOM 除外应主动退出让 C 感知） |
+| 内存无泄漏 | 堆 used 不随运行时间无限增长（Old Gen 在模板缓存占满后收敛） |
+| 可观测性 | GC 日志开启，支持事后回溯 |
+
+---
+
+## 四、监控数据现状与局限
+
+### 4.1 现有数据来源
+
+6 个节点 + 1 组现场验证数据，均为 **java 工程引入 druid-ak 后从审计表拉 SQL 来解析** 的压测数据，**非**真实 C 调用场景。
+
+| 节点 | 总调用量 | 堆 used | 核心特征 |
+|------|---------|---------|---------|
+| node62 | 2.0 亿 | 1.1 GB | 正常节点，低 NonSupport，基准参考 |
+| node203 | 5.0 亿 | **1.4 GB** | 正常节点，最大堆 used |
+| node135 | 5.0 亿 | 923 MB | Old Gen 最大（664 MB），avgLen 最短（198 B） |
+| node160 | 5.0 亿 | 578 MB | Old Gen 最小（267 MB），成功 avgLen 最长（512 B） |
+| node116 | 5.0 亿 | 1.2 GB | 49% NonSupport，avgLen 最长（778 B） |
+| node107 | 5.0 亿 | 513 MB | 68% NonSupport，CPU 仅 5.6% |
+| 现场验证 | 5,073 万 | — | 真实环境，avgLen=140 B |
+
+### 4.2 数据局限性（需注意）
+
+```
+监控数据 ≠ 真实场景
+├── 数据采集自身有性能损耗（PerfTestConfig 从审计表拉 SQL + Queue 缓存）
+├── 不代表 C 直接调用 jar 的资源消耗
+├── 所有节点统一为 Xms=1G / Xmx=2G / G1 默认 / 4 线程
+└── 执行环境有额外资源开销，监控值偏高
+```
+
+### 4.3 已知数据缺口
+
+| 缺口 | 影响 | 优先级 |
+|------|------|--------|
+| 缺少真实 C 调用场景监控 | 当前数据可能高估实际资源消耗 | P0 |
+| 缺少 GC 日志 | 无法确定实际 GC 频率和暂停时间 | P0 |
+| 缺少 10 亿级数据节点数据 | 对 XL 档位的内存估算依赖公式外推 | P1 |
+| 缺少不同线程数（1/10）对比 | 无法验证线程数对内存分配速率的影响 | P1 |
+| 缺少 SQL 模板种类分布 | Old Gen 估算用的是经验的"每亿增量"，非精确值 | P2 |
+
+---
+
+## 五、需求总结
+
+### 5.1 需求清单
+
+| ID | 需求 | 类型 | 优先级 |
+|----|------|------|--------|
+| R-01 | GC STW 暂停 P99 < 50 ms，Max < 100 ms | 延迟 | P0 |
+| R-02 | 0 Full GC（运行期间） | 延迟 | P0 |
+| R-03 | 支撑 11,600 SQL/s 峰值吞吐 | 容量 | P0 |
+| R-04 | 适配 8GB~128GB OS 内存分档（S/M/L/XL） | 约束 | P0 |
+| R-05 | JDK 8 兼容（主）、JDK 17+ 支持（可选优化） | 约束 | P0 |
+| R-06 | 堆使用量不超过分配内存，无 OOM | 稳定性 | P0 |
+| R-07 | 开启 GC 日志，支持事后分析 | 可观测性 | P1 |
+| R-08 | 启动参数支持 AlwaysPreTouch / ExitOnOOM / 固定堆 | 适配 C 调用 | P1 |
+| R-09 | NonSupport 率高（>50%）的节点参数兼容 | 兼容性 | P2 |
+
+### 5.2 边界条件
+
+| 条件 | 说明 |
+|------|------|
+| **非目标** | 优化 C 调用方的数据投递效率（外部依赖） |
+| **非目标** | 优化 Druid Parser 自身的解析速度（框架源码修改） |
+| **非目标** | 降低 NonSupport 率（SQL 语法兼容性问题） |
+| **假设** | SQL 模板的 LRU 缓存已开启（P0 优化项，非 JVM 参数范围） |
+| **假设** | 部署节点的 OS 内存 ≥ 8GB |
+| **假设** | 单 JVM 实例单 jar |
+
+---
+
+## 六、决策树：需求 → 选型
+
+```
+需求 R-01 (pause < 50ms)
+├── JDK 8+ → G1GC + MaxGCPauseMillis=50
+└── JDK 17+ → ZGC（<1ms，推荐 XL 档）
+
+需求 R-03 (11,600 SQL/s)
+├── 分档估算堆大小（见内存估算公式）
+├── S 档：1GB 堆 → 支撑 ~2,000 SQL/s
+├── M 档：2GB 堆 → 支撑 ~5,000 SQL/s
+├── L 档：4GB 堆 → 支撑 ~10,000 SQL/s
+└── XL 档：6GB+ 堆 → 支撑 11,600+ SQL/s
+
+需求 R-04 (多档适配)
+├── 每档独立参数集（Region / GC线程 / Eden%）
+└── Xms=Xmx 固定堆，避免运行时 resize
+```
+
+> **公式定义的完整推导不在此展开**，见 `JVM调优方案-v2.md` 第 2 章。此处仅标记需求边界。
