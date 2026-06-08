@@ -12,8 +12,8 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface AuditBaseMapper extends BaseMapper<AuditBaseDO> {
 
-    @Select("select min(happenTime) from audit_record where tenantId = '0' and happenTime >= '2021-01-01 00:00:00'")
-    String selectMinTime();
+    @Select("select min(happenTime) from audit_record where tenantId = #{tenantId} and happenTime >= '2021-01-01 00:00:00'")
+    String selectMinTime(@Param("tenantId") String tenantId);
 
     /**
      * 查找指定 ID 之后的下一条记录的 happenTime（用于跳过时间间隙）

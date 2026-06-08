@@ -85,7 +85,7 @@ public class AuditDataFetcher implements DataFetcherService {
             return auditId;
         }
 
-        String happenTime = auditBaseMapper.selectMinTime();
+        String happenTime = auditBaseMapper.selectMinTime(config.getTenantId());
         log.info("initSecIfNeed: happenTime = {}", happenTime);
         if (happenTime == null) {
             return null;
