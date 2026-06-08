@@ -16,6 +16,7 @@ public class SqlTemplateRes {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    private Integer dbType;
 
     private String operType;
 
@@ -28,8 +29,6 @@ public class SqlTemplateRes {
      * 状态
      */
     private String status;
-
-    private Integer dbType;
 
     /**
      * 耗时(ns)

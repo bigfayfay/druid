@@ -10,6 +10,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Service;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -30,9 +31,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * 多个消费者线程可并发调用 {@link #addRecord(SqlTemplateRes)}。
  */
 @Service
-public class DataBasePostHandler implements PostHandler {
+@ConditionalOnExpression("'${perf.data-post-handler:res-insert,res-update}'.split(',').contains('res-insert')")
+public class ResSavePostHandler implements PostHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(DataBasePostHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ResSavePostHandler.class);
 
     /** LRU 去重缓存容量：保留最近见过的 N 个 MD5，淘汰最冷的 */
     private static final int LRU_CAPACITY = 500_000;
@@ -62,8 +64,8 @@ public class DataBasePostHandler implements PostHandler {
             })
     );
 
-    public DataBasePostHandler(@Value("${perf.flush-threshold:180}") int flushThreshold,
-                               @Value("${perf.error-only:false}") boolean errorOnly) {
+    public ResSavePostHandler(@Value("${perf.flush-threshold:180}") int flushThreshold,
+                              @Value("${perf.error-only:false}") boolean errorOnly) {
         this.flushThreshold = flushThreshold;
         this.errorOnly = errorOnly;
         this.buffer = new ArrayList<>(flushThreshold);
@@ -150,6 +152,11 @@ public class DataBasePostHandler implements PostHandler {
         if (toFlush != null) {
             doFlush(toFlush);
         }
+    }
+
+    @Override
+    public void close() {
+
     }
 
     /**

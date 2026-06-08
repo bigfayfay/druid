@@ -12,4 +12,7 @@ public interface PostHandler {
     public void addRecord(SqlTemplateRes record);
 
     public void flush();
+
+    public void close();
+
 }

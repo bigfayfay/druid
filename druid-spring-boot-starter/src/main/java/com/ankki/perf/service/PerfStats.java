@@ -47,6 +47,10 @@ public class PerfStats {
         return endTimeMillis;
     }
 
+    public void recordTotal(long batchSize) {
+        totalCount.add(batchSize);
+    }
+
     public void recordSuccess(long elapsedNanos) {
         totalCount.increment();
         successCount.increment();

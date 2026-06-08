@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface SqlTemplateResMapper extends BaseMapper<SqlTemplateRes> {
@@ -17,4 +18,7 @@ public interface SqlTemplateResMapper extends BaseMapper<SqlTemplateRes> {
             "ON DUPLICATE KEY UPDATE " +
             "fail_num = IFNULL(fail_num, 0) + 1")
     int insertOrUpdate(@Param("r") SqlTemplateRes record);
+
+    @Update("UPDATE sql_template_res SET remark = #{r.remark} WHERE id = #{r.id}")
+    int updateRemark(@Param("r") SqlTemplateRes record);
 }

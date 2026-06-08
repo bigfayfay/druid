@@ -1,7 +1,6 @@
 package com.ankki.perf.runner;
 
 import cn.hutool.core.io.FileUtil;
-import com.ankki.druid.parser.AkDruidSqlParser;
 import com.ankki.druid.parser.AkSqlParserStatusEnum;
 import com.ankki.druid.parser.CustomerOutputVisitorUtils;
 import com.ankki.druid.parser.config.VmOptions;
@@ -16,6 +15,7 @@ import com.ankki.perf.service.DataFetcherService;
 import com.ankki.perf.service.PerfStats;
 import com.ankki.perf.service.PostHandler;
 import com.ankki.perf.service.handler.FilePostHandler;
+import com.ankki.perf.util.AuditUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 @Component
@@ -47,6 +46,8 @@ public class PerfTestRunner implements CommandLineRunner {
     @Resource
     private PerfTestConfig config;
 
+    String path = "/data/logs/druid";
+
     @Override
     public void run(String... args) {
         if (!config.isEnabled()) {
@@ -59,8 +60,6 @@ public class PerfTestRunner implements CommandLineRunner {
         log.info("[APP] Config: {}", config.toString());
 
         PerfStats stats = new PerfStats();
-
-        String path = "/data/logs/druid";
         FileUtil.mkdir(path);
 
         // 用 BlockingQueue 实现生产者-消费者模式
@@ -71,6 +70,134 @@ public class PerfTestRunner implements CommandLineRunner {
 
         // --- 生产者线程：从 DB 读取数据放入队列 ---
         // 连续空批次阈值：连续多次返回空结果才认为数据已耗尽（处理时间窗口间隙问题）
+        Thread producer = producerThread(stats, queue);
+
+        // --- 消费者线程池：并行解析 SQL ---
+        ExecutorService consumers = Executors.newFixedThreadPool(threadCount, r -> {
+            Thread t = new Thread(r);
+            t.setName("perf-consumer-" + t.getId());
+            t.setDaemon(true);
+            return t;
+        });
+
+        List<Future<?>> futures = new ArrayList<>();
+        
+        // 用于存储每个线程的统计信息
+        List<ThreadStats> threadStatsList = Collections.synchronizedList(new ArrayList<>());
+        
+        for (int i = 0; i < threadCount; i++) {
+            final int threadIdx = i;
+            // 为每个线程创建独立的统计对象
+            ThreadStats threadStats = new ThreadStats(threadIdx);
+            threadStatsList.add(threadStats);
+
+            futures.add(consumers.submit(() -> {
+                consumerThread(queue, threadStats, stats);
+            }));
+        }
+
+        // 启动生产者
+        producer.start();
+
+        // 等待所有消费者完成
+        for (Future<?> f : futures) {
+            try {
+                f.get();
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("[APP] Consumer error", e);
+            }
+        }
+        consumers.shutdown();
+
+        // 刷新DB后处理器中剩余的记录
+        postHandlers.forEach(PostHandler::flush);
+
+        stats.markEnd();
+        log.info("[APP] Total processed records: {}", totalProcessed.sum());
+        log.info(stats.generateReport());
+
+        // 打印全局汇总统计
+        printGlobalStats(threadStatsList, stats);
+
+        log.error("[APP] exit ...");
+        System.exit(0);
+    }
+
+    private void consumerThread(BlockingQueue<List<SqlTypeBO>> queue, ThreadStats threadStats, PerfStats stats) {
+        // 为每个线程创建独立的后处理器
+        List<PostHandler> threadPostHandlers = new ArrayList<>();
+
+        try {
+            // 每个消费者线程独立的后处理器列表
+            final boolean writeFile = config.isWriteFailedFile();
+            final boolean writeDb = config.isWriteResultDb();
+
+            int threadIdx = threadStats.getThreadId();
+
+            // 文件后处理器（每个线程一个文件）
+            FilePostHandler filePostHandler = null;
+            if (writeFile) {
+                try {
+                    filePostHandler = new FilePostHandler(path, threadIdx, true);
+                    threadPostHandlers.add(filePostHandler);
+                } catch (IOException e) {
+                    log.error("[APP] Failed to create FilePostHandler for thread-{}", threadIdx, e);
+                }
+            }
+
+            // DB后处理器（所有线程共享）
+            if (writeDb) {
+                threadPostHandlers.addAll(postHandlers);
+            }
+
+            while (true) {
+                List<SqlTypeBO> batch = queue.take();
+                if (batch == POISON_PILL) {
+                    break;
+                }
+                for (SqlTypeBO record : batch) {
+
+                    String sql = AuditUtils.restoreAllInvisibleChars(record.getOperSentence());
+                    long parseStart = System.nanoTime();
+                    String[] sqlRes = CustomerOutputVisitorUtils.getSqlTemplate_v2(sql, record.getDbType());
+//                            String[] sqlRes = getSqlTemplate_v3(record.getOperSentence(), record.getDbType());
+                    long costNanos = System.nanoTime() - parseStart;
+
+                    AkSqlParserStatusEnum statusEnum = AkSqlParserStatusEnum.fastValueOf(sqlRes[0]);
+
+                    // 构建结果记录
+                    SqlTemplateRes res = record.toSqlReds();
+                    res.setStatus(sqlRes[0]);
+                    res.setCostNs(costNanos);
+                    res.setOperSentence(sql);
+                    if (AkSqlParserStatusEnum.Success != statusEnum) {
+                        res.setFailReason(sqlRes.length > 4 ? sqlRes[4] : null);
+                    }
+
+                    // 记录线程级别的统计
+                    threadStats.recordParse(costNanos, statusEnum == AkSqlParserStatusEnum.Success);
+
+                    // 通过后处理器统一处理
+                    threadPostHandlers.forEach(handler -> handler.addRecord(res));
+                }
+
+                stats.recordTotal(batch.size());
+                if (threadStats.printIfMilestone()) {
+                    threadPostHandlers.forEach(PostHandler::flush);
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            // 线程结束时刷新并关闭文件
+            threadPostHandlers.forEach(PostHandler::flush);
+            threadPostHandlers.forEach(PostHandler::close);
+            // 打印线程级别的统计
+            threadStats.printStats();
+        }
+    }
+
+    private Thread producerThread(PerfStats stats, BlockingQueue<List<SqlTypeBO>> queue) {
         final int maxConsecutiveEmpty = config.getMaxConsecutiveEmpty();
         Thread producer = new Thread(() -> {
             long lastId = config.getStartId();
@@ -122,7 +249,7 @@ public class PerfTestRunner implements CommandLineRunner {
             }
 
             // 放入毒丸通知所有消费者停止
-            for (int i = 0; i < threadCount; i++) {
+            for (int i = 0; i < config.getThreadCount(); i++) {
                 try {
                     queue.put(POISON_PILL);
                 } catch (InterruptedException e) {
@@ -130,138 +257,7 @@ public class PerfTestRunner implements CommandLineRunner {
                 }
             }
         }, "perf-producer");
-
-        // --- 消费者线程池：并行解析 SQL ---
-        ExecutorService consumers = Executors.newFixedThreadPool(threadCount, r -> {
-            Thread t = new Thread(r);
-            t.setName("perf-consumer-" + t.getId());
-            t.setDaemon(true);
-            return t;
-        });
-
-        List<Future<?>> futures = new ArrayList<>();
-        // 每个消费者线程独立的后处理器列表
-        final boolean writeFile = config.isWriteFailedFile();
-        final boolean writeDb = config.isWriteResultDb();
-        
-        // 用于存储每个线程的统计信息
-        List<ThreadStats> threadStatsList = Collections.synchronizedList(new ArrayList<>());
-        
-        for (int i = 0; i < threadCount; i++) {
-            final int threadIdx = i;
-            
-            // 为每个线程创建独立的统计对象
-            ThreadStats threadStats = new ThreadStats(threadIdx);
-            threadStatsList.add(threadStats);
-            
-            // 为每个线程创建独立的后处理器
-            List<PostHandler> threadPostHandlers = new ArrayList<>();
-            
-            // 文件后处理器（每个线程一个文件）
-            FilePostHandler filePostHandler = null;
-            if (writeFile) {
-                try {
-                    filePostHandler = new FilePostHandler(path, threadIdx, true);
-                    threadPostHandlers.add(filePostHandler);
-                } catch (IOException e) {
-                    log.error("[APP] Failed to create FilePostHandler for thread-{}", threadIdx, e);
-                }
-            }
-            
-            // DB后处理器（所有线程共享）
-            if (writeDb) {
-                threadPostHandlers.addAll(postHandlers);
-            }
-            
-            final List<PostHandler> finalPostHandlers = threadPostHandlers;
-            final FilePostHandler finalFilePostHandler = filePostHandler;
-            
-            futures.add(consumers.submit(() -> {
-                try {
-                    while (true) {
-                        List<SqlTypeBO> batch = queue.take();
-                        if (batch == POISON_PILL) {
-                            break;
-                        }
-                        for (SqlTypeBO record : batch) {
-                            long parseStart = System.nanoTime();
-                            String[] sqlRes = CustomerOutputVisitorUtils.getSqlTemplate_v2(record.getOperSentence(), record.getDbType());
-//                            String[] sqlRes = getSqlTemplate_v3(record.getOperSentence(), record.getDbType());
-                            long costNanos = System.nanoTime() - parseStart;
-
-                            AkSqlParserStatusEnum statusEnum = AkSqlParserStatusEnum.fastValueOf(sqlRes[0]);
-
-                            // 构建结果记录
-                            SqlTemplateRes res = new SqlTemplateRes();
-                            res.setId(record.getId());
-                            res.setStatus(sqlRes[0]);
-                            res.setCostNs(costNanos);
-                            res.setDbType(record.getDbType());
-                            res.setOperType(record.getOperType());
-                            res.setOperSentence(record.getOperSentence());
-                            res.setSqlLen(record.getOperSentence() != null ? record.getOperSentence().length() : 0);
-                            if (AkSqlParserStatusEnum.Success != statusEnum) {
-                                res.setFailReason(sqlRes.length > 4 ? sqlRes[4] : null);
-                            }
-
-                            // 记录线程级别的统计
-                            threadStats.recordParse(costNanos, statusEnum == AkSqlParserStatusEnum.Success);
-
-                            // 通过后处理器统一处理
-                            for (PostHandler handler : finalPostHandlers) {
-                                // 如果是FilePostHandler，传入原始SQL
-                                if (handler instanceof FilePostHandler) {
-                                    ((FilePostHandler) handler).addRecord(res, record.getOperSentence());
-                                } else {
-                                    handler.addRecord(res);
-                                }
-                            }
-                        }
-                        totalProcessed.add(batch.size());
-                        if (threadStats.printIfMilestone()) {
-                            postHandlers.forEach(PostHandler::flush);
-                        }
-
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    // 线程结束时刷新并关闭文件
-                    if (finalFilePostHandler != null) {
-                        finalFilePostHandler.flush();
-                        finalFilePostHandler.close();
-                    }
-                    // 打印线程级别的统计
-                    threadStats.printStats();
-                }
-            }));
-        }
-
-        // 启动生产者
-        producer.start();
-
-        // 等待所有消费者完成
-        for (Future<?> f : futures) {
-            try {
-                f.get();
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("[APP] Consumer error", e);
-            }
-        }
-        consumers.shutdown();
-
-        // 刷新DB后处理器中剩余的记录
-        postHandlers.forEach(PostHandler::flush);
-
-        stats.markEnd();
-        log.info("[APP] Total processed records: {}", totalProcessed.sum());
-        log.info(stats.generateReport());
-        
-        // 打印全局汇总统计
-        printGlobalStats(threadStatsList, stats);
-        
-        log.error("[APP] exit ...");
-        System.exit(0);
+        return producer;
     }
 
 

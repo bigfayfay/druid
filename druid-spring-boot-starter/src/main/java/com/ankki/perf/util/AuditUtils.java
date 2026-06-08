@@ -37,7 +37,7 @@ public class AuditUtils {
     }
 
 
-    public static String replaceAllInvisibleChars(String str) {
+    public static String restoreAllInvisibleChars(String str) {
         return str == null ? null : str.replaceAll("\\u0011", "\\\\")
                                     .replaceAll("\\u0012", "\\\"")
                                     .replaceAll("\\u0013", "\\\r")

@@ -57,10 +57,21 @@ public class FilePostHandler implements PostHandler {
             return;
         }
 
+        AkSqlParserStatusEnum status = AkSqlParserStatusEnum.fastValueOf(record.getStatus());
+        if (status == AkSqlParserStatusEnum.Success || status == AkSqlParserStatusEnum.NonSupport) {
+            return;
+        }
+
         // 只写入失败的记录
         if (record.getFailReason() != null) {
             try {
-                writer.write(record.getId() + "|||" + record.getFailReason() + "|||");
+                writer.write(
+                        String.join("|||",
+                        ""+record.getId(),
+                        record.getOperType(),
+                        StrUtil.emptyIfNull(record.getFailReason()),
+                        record.getOperSentence())
+                );
                 // 注意：这里需要原始SQL，但SqlTemplateRes中没有保存，可能需要调整
                 // 暂时留空或者从其他地方获取
                 writer.newLine();
@@ -70,28 +81,6 @@ public class FilePostHandler implements PostHandler {
         }
     }
 
-    /**
-     * 写入失败记录（包含原始SQL）
-     *
-     * @param record     结果记录
-     * @param originalSql 原始SQL
-     */
-    public void addRecord(SqlTemplateRes record, String originalSql) {
-        if (writer == null) {
-            return;
-        }
-
-        AkSqlParserStatusEnum status = AkSqlParserStatusEnum.fastValueOf(record.getStatus());
-        // 只写入失败的记录
-        if (status != AkSqlParserStatusEnum.Success) {
-            try {
-                writer.write(record.getId() + "|||" + record.getOperType()+ "|||" + StrUtil.emptyIfNull(record.getFailReason()) + "|||" + originalSql);
-                writer.newLine();
-            } catch (IOException e) {
-                log.error("Failed to write to file for thread-{}, path: {}", threadIdx, filePath, e);
-            }
-        }
-    }
 
     @Override
     public void flush() {
