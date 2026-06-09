@@ -36,7 +36,7 @@ public class SqlTemplateResFetcher implements DataFetcherService {
 
     @Override
     public List<SqlTypeBO> fetchBatch(SqlTemplateQueryRequest request) {
-
+        AkDbTypeEnum akDbTypeEnum = AkDbTypeEnum.of(DbType.of(config.getDbType()));
         List<SqlTemplateRes> dataList = null;
         try {
             LambdaQueryWrapper<SqlTemplateRes> wrapper = new LambdaQueryWrapper<>();
@@ -71,8 +71,7 @@ public class SqlTemplateResFetcher implements DataFetcherService {
             dataList = new ArrayList<>();
         }
 
-        return dataList.stream()
-                .map(SqlTypeConvertor.INSTANCE::resToEntity).collect(Collectors.toList());
+        return dataList.stream().map(SqlTypeConvertor.INSTANCE::resToEntity).collect(Collectors.toList());
     }
 
 }

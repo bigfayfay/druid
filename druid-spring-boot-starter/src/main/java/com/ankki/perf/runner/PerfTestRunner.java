@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,8 +42,8 @@ public class PerfTestRunner implements CommandLineRunner {
     @Resource
     private DataFetcherService dataFetcherService;
 
-    @Resource
-    private List<PostHandler> postHandlers;
+    @Autowired(required = false)
+    private List<PostHandler> postHandlers = new ArrayList<>();
 
     @Resource
     private PerfTestConfig config;

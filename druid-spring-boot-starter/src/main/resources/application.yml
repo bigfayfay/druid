@@ -9,7 +9,7 @@ spring:
       lazy: true
       datasource:
         mysql:
-          url: jdbc:mysql://${DB_HOST:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          url: jdbc:mysql://${DB_HOST:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:zdzsj_sql_node62}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
           username: ${DB_USER:root}
           password: Ankki_mySQL123
           driver-class-name: com.mysql.cj.jdbc.Driver
@@ -47,19 +47,22 @@ mybatis-plus:
 # e.g., -Dperf.batch-size=2000 -Dperf.max-records=100000
 perf:
   enabled: ${PERF_ENABLED:true}
-  batch-size: ${PERF_BATCH_SIZE:2500}
-  db-type: ${PERF_DB_TYPE:oracle}
   warmup-batches: ${PERF_WARMUP_BATCHES:2}
-  max-records: ${PERF_MAX_RECORDS:10000000}
   thread-count: ${PERF_THREAD_COUNT:1}
   queue-capacity: ${PERF_QUEUE_CAPACITY:15}
+
+  data-post-handler: ${PERF_DATA_POST_HANDLER:res-update}
   write-failed-file: ${PERF_WRITE_FAILED_FILE:true}
   write-result-db: ${PERF_WRITE_RESULT_DB:true}
-  start-id: ${PERF_START_ID:0}
-  data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:audit}
-  max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
-  flush-threshold: ${PERF_FLUSH_THRESHOLD:180}
+  flush-threshold: ${PERF_FLUSH_THRESHOLD:70}
   error-only: ${PERF_ERROR_ONLY:false}
+
+  data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:sql-res}
+  start-id: ${PERF_START_ID:0}
+  max-records: ${PERF_MAX_RECORDS:10000000}
+  batch-size: ${PERF_BATCH_SIZE:2500}
+  max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
+  db-type: ${PERF_DB_TYPE:oracle}
   tenant-id: ${PERF_TENANT_ID:0}
 
 # 日志配置统一由 logback-spring.xml 管理

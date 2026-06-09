@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * 多个消费者线程可并发调用 {@link #addRecord(SqlTemplateRes)}。
  */
 @Service
-@ConditionalOnExpression("'${perf.data-post-handler:res-insert,res-update}'.split(',').contains('res-insert')")
+@ConditionalOnExpression("',${perf.data-post-handler:res-update},'.contains(',res-insert,')")
 public class ResSavePostHandler implements PostHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ResSavePostHandler.class);
