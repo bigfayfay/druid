@@ -27,8 +27,13 @@ PERF_QUEUE_CAPACITY=18
 PERF_MAX_RECORDS=500010000
 PERF_MAX_CONSECUTIVE_EMPTY=3600
 PERF_TENANT_ID=0
+PERF_DATA_FETCHER_TYPE="audit"
+# 8-cache, 57-iris, 1-sql_server,3-oracle
+PERF_DB_TYPE_MAP="8=1,57=1"
+
 
 # post handle
+PERF_DATA_POST_HANDLER="res-insert"
 PERF_WRITE_FAILED_FILE=false
 PERF_WRITE_RESULT_DB=true
 PERF_FLUSH_THRESHOLD=10
@@ -53,22 +58,22 @@ DB_USER_CK=root
 
 # JVM 参数（实时审计场景调优，暂停目标 50ms，基于 5千万级 SQL 解析实测数据）
 # 不同硬件配置请参考 docs/perf_param/JVM调优方案-v1.md
-JVM_OPTS="-Xms2g -Xmx2g"
+JVM_OPTS="-Xms1g -Xmx2g"
 JVM_OPTS="$JVM_OPTS -XX:+UseG1GC"
-JVM_OPTS="$JVM_OPTS -XX:MaxGCPauseMillis=50"
-JVM_OPTS="$JVM_OPTS -XX:G1NewSizePercent=10"
-JVM_OPTS="$JVM_OPTS -XX:G1MaxNewSizePercent=25"
-JVM_OPTS="$JVM_OPTS -XX:G1HeapRegionSize=2m"
-JVM_OPTS="$JVM_OPTS -XX:ConcGCThreads=2"
-JVM_OPTS="$JVM_OPTS -XX:ParallelGCThreads=4"
-JVM_OPTS="$JVM_OPTS -XX:InitiatingHeapOccupancyPercent=35"
-JVM_OPTS="$JVM_OPTS -XX:G1ReservePercent=15"
-JVM_OPTS="$JVM_OPTS -XX:+ParallelRefProcEnabled"
-JVM_OPTS="$JVM_OPTS -XX:+UseStringDeduplication"
-JVM_OPTS="$JVM_OPTS -XX:+AlwaysPreTouch"
-JVM_OPTS="$JVM_OPTS -XX:+ExitOnOutOfMemoryError"
-JVM_OPTS="$JVM_OPTS -XX:+PerfDisableSharedMem"
-JVM_OPTS="$JVM_OPTS -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=50m"
+#JVM_OPTS="$JVM_OPTS -XX:MaxGCPauseMillis=50"
+#JVM_OPTS="$JVM_OPTS -XX:G1NewSizePercent=10"
+#JVM_OPTS="$JVM_OPTS -XX:G1MaxNewSizePercent=25"
+#JVM_OPTS="$JVM_OPTS -XX:G1HeapRegionSize=2m"
+#JVM_OPTS="$JVM_OPTS -XX:ConcGCThreads=2"
+#JVM_OPTS="$JVM_OPTS -XX:ParallelGCThreads=4"
+#JVM_OPTS="$JVM_OPTS -XX:InitiatingHeapOccupancyPercent=35"
+#JVM_OPTS="$JVM_OPTS -XX:G1ReservePercent=15"
+#JVM_OPTS="$JVM_OPTS -XX:+ParallelRefProcEnabled"
+#JVM_OPTS="$JVM_OPTS -XX:+UseStringDeduplication"
+#JVM_OPTS="$JVM_OPTS -XX:+AlwaysPreTouch"
+#JVM_OPTS="$JVM_OPTS -XX:+ExitOnOutOfMemoryError"
+#JVM_OPTS="$JVM_OPTS -XX:+PerfDisableSharedMem"
+#JVM_OPTS="$JVM_OPTS -Xlog:gc*:file=/data/logs/druid/gc.log:time,uptime:filecount=10,filesize=50m"
 
 # JAR 路径（相对或绝对）
 JAR_FILE="druid-spring-boot-starter-1.2.27.jar"
@@ -110,6 +115,8 @@ while [ $# -gt 0 ]; do
             PERF_ERROR_ONLY=false; shift ;;
         --tenant-id)
             PERF_TENANT_ID="$2"; shift 2 ;;
+        --db-type-map)
+            PERF_DB_TYPE_MAP="$2"; shift 2 ;;
         --db-name)
             DB_NAME="$2"; shift 2 ;;
         --db-port)
@@ -162,6 +169,8 @@ while [ $# -gt 0 ]; do
             echo "  --flush-threshold <n>       DB批量刷新阈值 (default: 180)"
             echo "  --error-only                仅处理错误记录写入DB"
             echo "  --no-error-only             处理所有记录 (default)"
+            echo "  --tenant-id <id>              租户ID (default: 0)"
+            echo "  --db-type-map <map>           dbType转换配置，格式：key1=value1,key2=value2 (default: 1=2,27=3)"
             echo "  --db-name <name>            数据库名 (default: test_sql_zbzq_20251125)"
             echo "  --db-host <host>            MySQL主机地址 (default: 172.19.4.41)"
             echo "  --db-host-ck <host>         ClickHouse主机地址 (default: 172.19.4.41)"
@@ -220,6 +229,7 @@ echo " perf.max-empty:   $PERF_MAX_CONSECUTIVE_EMPTY"
 echo " perf.flush-thr:   $PERF_FLUSH_THRESHOLD"
 echo " perf.error-only:  $PERF_ERROR_ONLY"
 echo " perf.tenant-id:   $PERF_TENANT_ID"
+echo " perf.db-type-map: $PERF_DB_TYPE_MAP"
 [ -n "$MONITOR" ]               && echo " monitor:          $MONITOR"
 [ -n "$MONITOR_DIR" ]           && echo " monitor.dir:      $MONITOR_DIR"
 [ -n "$MONITOR_INTERVAL" ]      && echo " monitor.interval: $MONITOR_INTERVAL"
@@ -242,6 +252,8 @@ JAVA_CMD="java $JVM_OPTS \
     -Dperf.max-records=$PERF_MAX_RECORDS \
     -Dperf.thread-count=$PERF_THREAD_COUNT \
     -Dperf.queue-capacity=$PERF_QUEUE_CAPACITY \
+    -Dperf.data-fetcher-type=$PERF_DATA_FETCHER_TYPE \
+    -Dperf.data-post-handler=$PERF_DATA_POST_HANDLER \
     -Dperf.write-failed-file=$PERF_WRITE_FAILED_FILE \
     -Dperf.write-result-db=$PERF_WRITE_RESULT_DB \
     -Dperf.start-id=$PERF_START_ID \
@@ -249,6 +261,7 @@ JAVA_CMD="java $JVM_OPTS \
     -Dperf.flush-threshold=$PERF_FLUSH_THRESHOLD \
     -Dperf.error-only=$PERF_ERROR_ONLY \
     -Dperf.tenant-id=$PERF_TENANT_ID \
+    -Dperf.db-type-map=$PERF_DB_TYPE_MAP \
     $VM_OPTS \
     -DDB_HOST=$DB_HOST \
     -DDB_HOST_CK=$DB_HOST_CK \

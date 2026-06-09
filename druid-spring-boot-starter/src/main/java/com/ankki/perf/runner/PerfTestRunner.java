@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -161,7 +162,9 @@ public class PerfTestRunner implements CommandLineRunner {
 
                     String sql = AuditUtils.restoreAllInvisibleChars(record.getOperSentence());
                     long parseStart = System.nanoTime();
-                    String[] sqlRes = CustomerOutputVisitorUtils.getSqlTemplate_v2(sql, record.getDbType());
+                    // 应用 dbType 转换配置
+                    Integer convertedDbType = config.convertDbType(record.getDbType());
+                    String[] sqlRes = CustomerOutputVisitorUtils.getSqlTemplate_v2(sql, convertedDbType);
 //                            String[] sqlRes = getSqlTemplate_v3(record.getOperSentence(), record.getDbType());
                     long costNanos = System.nanoTime() - parseStart;
 
@@ -174,6 +177,9 @@ public class PerfTestRunner implements CommandLineRunner {
                     res.setOperSentence(sql);
                     if (AkSqlParserStatusEnum.Success != statusEnum) {
                         res.setFailReason(sqlRes.length > 4 ? sqlRes[4] : null);
+                    }
+                    if (!Objects.equals(record.getDbType(), convertedDbType)) {
+                        res.setRemark(res.getDbType() + " -> " + convertedDbType);
                     }
 
                     // 记录线程级别的统计

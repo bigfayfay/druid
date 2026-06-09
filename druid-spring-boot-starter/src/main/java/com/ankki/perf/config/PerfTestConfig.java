@@ -4,6 +4,9 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 @Component
 public class PerfTestConfig {
@@ -88,5 +91,71 @@ public class PerfTestConfig {
      */
     @Value("${perf.error-only:true}")
     private boolean errorOnly;
+
+    /**
+     * dbType转换配置：将数据库中的dbType值转换为解析器需要的值
+     * 格式：key1=value1,key2=value2 （例如：1=2,27=3）
+     */
+    @Value("${perf.db-type-map:}")
+    private String dbTypeMapStr;
+
+    /**
+     * dbType转换Map（懒加载）
+     */
+    private volatile Map<Integer, Integer> dbTypeMap;
+
+    /**
+     * 获取dbType转换Map
+     */
+    public Map<Integer, Integer> getDbTypeMap() {
+        if (dbTypeMap == null) {
+            synchronized (this) {
+                if (dbTypeMap == null) {
+                    dbTypeMap = parseDbTypeMap(dbTypeMapStr);
+                }
+            }
+        }
+        return dbTypeMap;
+    }
+
+    /**
+     * 转换dbType值
+     * @param originalDbType 原始dbType值
+     * @return 转换后的dbType值，如果没有配置转换则返回原值
+     */
+    public Integer convertDbType(Integer originalDbType) {
+        if (originalDbType == null) {
+            return null;
+        }
+        Map<Integer, Integer> map = getDbTypeMap();
+        return map.getOrDefault(originalDbType, originalDbType);
+    }
+
+    /**
+     * 解析dbType转换配置字符串
+     * @param configStr 配置字符串，格式：key1=value1,key2=value2
+     * @return 转换Map
+     */
+    private Map<Integer, Integer> parseDbTypeMap(String configStr) {
+        Map<Integer, Integer> map = new HashMap<>();
+        if (configStr == null || configStr.trim().isEmpty()) {
+            return map;
+        }
+
+        String[] pairs = configStr.split(",");
+        for (String pair : pairs) {
+            String[] kv = pair.trim().split("=");
+            if (kv.length == 2) {
+                try {
+                    Integer key = Integer.parseInt(kv[0].trim());
+                    Integer value = Integer.parseInt(kv[1].trim());
+                    map.put(key, value);
+                } catch (NumberFormatException e) {
+                    // 忽略无效配置
+                }
+            }
+        }
+        return map;
+    }
 
 }

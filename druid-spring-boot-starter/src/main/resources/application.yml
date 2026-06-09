@@ -9,7 +9,7 @@ spring:
       lazy: true
       datasource:
         mysql:
-          url: jdbc:mysql://${DB_HOST:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:zdzsj_sql_node107}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          url: jdbc:mysql://${DB_HOST:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:lg6_sql_node11}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
           username: ${DB_USER:root}
           password: Ankki_mySQL123
           driver-class-name: com.mysql.cj.jdbc.Driver
@@ -64,5 +64,7 @@ perf:
   max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
   db-type: ${PERF_DB_TYPE:oracle}
   tenant-id: ${PERF_TENANT_ID:0}
+  # dbType转换配置：将数据库中的dbType值转换为解析器需要的值，格式：8-cache, 57-iris, 1-sql_server,3-oracle
+  db-type-map: ${PERF_DB_TYPE_MAP:8=1,57=1}
 
 # 日志配置统一由 logback-spring.xml 管理

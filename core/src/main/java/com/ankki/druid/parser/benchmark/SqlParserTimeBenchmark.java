@@ -1,10 +1,9 @@
-package com.ankki.druid.parser.benchmark.times;
+package com.ankki.druid.parser.benchmark;
 
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.visitor.ParameterizedOutputVisitorUtils;
 import com.ankki.druid.parser.AkDbTypeEnum;
 import com.ankki.druid.parser.CustomerOutputVisitorUtils;
-import com.ankki.druid.parser.benchmark.BaseData;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
@@ -41,14 +40,14 @@ import java.util.concurrent.TimeUnit;
  *   <li>-p sql=xxx: 参数化 SQL（覆盖 @Param）</li>
  * </ul>
  */
-@BenchmarkMode({Mode.Throughput, Mode.AverageTime})
+@BenchmarkMode({Mode.Throughput})
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)  // 所有线程共享实例
-@Warmup(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 60, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 2, time = 5, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 3, time = 20, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1, jvmArgs = {"-Xmx1g", "-XX:+UseG1GC"})
 @Threads(Threads.MAX) // 默认使用所有可用核心数，可通过命令行 -t 覆盖
-public class SqlParserBenchmark {
+public class SqlParserTimeBenchmark {
 
     @Param({"mysql"})
     private String dbTypeStr;
@@ -130,7 +129,7 @@ public class SqlParserBenchmark {
                         runIndex, threadCounts.length * heapSizes.length, threads, heap);
 
                 Options opt = new OptionsBuilder()
-                        .include(SqlParserBenchmark.class.getSimpleName())
+                        .include(SqlParserTimeBenchmark.class.getSimpleName())
                         .threads(threads)
                         .forks(1)
                         .jvmArgs("-Xmx" + heap, "-XX:+UseG1GC")
