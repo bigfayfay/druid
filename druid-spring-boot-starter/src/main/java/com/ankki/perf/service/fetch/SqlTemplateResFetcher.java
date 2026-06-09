@@ -45,6 +45,7 @@ public class SqlTemplateResFetcher implements DataFetcherService {
             // 起始 ID 条件
             if (request.getStartId() != null) {
                 wrapper.gt(SqlTemplateRes::getId, request.getStartId());
+                wrapper.isNull(SqlTemplateRes::getRemark);
             }
 
             // SQL 类型过滤（如果有）
