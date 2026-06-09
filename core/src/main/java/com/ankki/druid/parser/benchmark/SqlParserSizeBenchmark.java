@@ -11,6 +11,8 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * <ul>
  *   <li>线程数: 1, 4, 10</li>
  *   <li>堆大小: 128m, 1g, 4g</li>
- *   <li>每组合精确调用: 5,000,000 次（SingleShotTime 模式）</li>
+ *   <li>每组合精确调用: 500,000 次（SingleShotTime 模式）</li>
  * </ul>
  *
  * <p>使用方式：</p>
@@ -35,10 +37,10 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, batchSize = 1_000_000)
 @Fork(value = 1, jvmArgs = {"-XX:+UseG1GC"})
 @Threads(1)
-public class SqlParserBenchmarkOffice {
+public class SqlParserSizeBenchmark {
 
     /** 总调用次数 */
-    private static final int TOTAL_INVOCATIONS = 5_000_000;
+    private static final int TOTAL_INVOCATIONS = 500_000;
     /** 测量迭代次数 */
     private static final int MEASUREMENT_ITERATIONS = 5;
     /** 预热迭代次数 */
@@ -66,16 +68,32 @@ public class SqlParserBenchmarkOffice {
         this.akDbTypeId = akDbTypeEnum.getTypeId();
         dbType = akDbTypeEnum.getDruidDbType();
         // 预热一次，确保类加载完成
-        ParameterizedOutputVisitorUtils.parameterize(sql, dbType);
+        CustomerOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+        // 预热一次，确保类加载完成
+        List<Object> objects = new ArrayList<>();
+        ParameterizedOutputVisitorUtils.parameterize(sql, dbType,objects);
     }
 
     @Benchmark
     public void benchmarkGetSqlTemplate_v2() {
+        CustomerOutputVisitorUtils.getSqlTemplate_v2(sql, akDbTypeId);
+    }
+
+
+    @Benchmark
+    public void benchmarkGetSqlTemplate_office() {
         ParameterizedOutputVisitorUtils.parameterize(sql, dbType);
     }
 
+
+    @Benchmark
+    public void benchmarkGetSqlTemplate_office_params() {
+        List<Object> objects = new ArrayList<>();
+        ParameterizedOutputVisitorUtils.parameterize(sql, dbType, objects);
+    }
+
     /**
-     * 运行全部 9 种组合（3线程数 × 3堆大小），每组合精确 5,000,000 次调用
+     * 运行全部 9 种组合（3线程数 × 3堆大小），每组合精确 500,000 次调用
      *
      * <p>SingleShotTime 模式下：总调用 = threads × iterations × batchSize</p>
      * <p>因此 batchSize = TOTAL_INVOCATIONS / (threads × iterations)</p>
@@ -107,7 +125,7 @@ public class SqlParserBenchmarkOffice {
                         (long) threads * MEASUREMENT_ITERATIONS * batchSize);
 
                 Options opt = new OptionsBuilder()
-                        .include(SqlParserBenchmarkOffice.class.getSimpleName())
+                        .include(SqlParserSizeBenchmark.class.getSimpleName())
                         .mode(Mode.SingleShotTime)
                         .threads(threads)
                         .forks(1)
@@ -115,6 +133,7 @@ public class SqlParserBenchmarkOffice {
                         .warmupIterations(WARMUP_ITERATIONS)
                         .warmupBatchSize(WARMUP_BATCH)
                         .measurementIterations(MEASUREMENT_ITERATIONS)
+                        //会正确覆盖注解值
                         .measurementBatchSize(batchSize)
                         .resultFormat(ResultFormatType.JSON)
                         .result(resultFile)
