@@ -1,0 +1,47 @@
+============================================================
+ zdzsj_node116 SQL解析修复 - 验证报告
+============================================================
+select            ro.rescue_id,            call_serial_num,            center_name,            call_name,            call_phone,            contact_phone,            ro.sex,            symptom,            ro.pt_oral_symptom oral_symptom,            special_case,            call_type.call_type_name,            rescue_address,            if( rocr.first_assign_time is null,-1,1) as dispatch_status,            if( rocr.first_assign_time is null,0,1) as ambulance_count,            ambulance.license_plate am_license_plate,            driver_name,            driver_telephone driver_phone,            doc_name doctor_name,            doctor.account doctor_phone,            stretcher.`name` assist_staff_name,            stretcher.telephone assist_staff_phone,            dispatcher.dispatcher_name,            rocr.first_assign_time assign_time,            ambulance_go_time,            ambulance_reach_time,            send_to_hos_time,            arrival_hospital_time arrival_time,            cancel.create_time cancel_time,            '' primary_diagnosis,            '' emergency_measures,            '' ecg_image        from cross_regional_rescue_bind cr                 inner join rescue_order_v2 ro on ro.rescue_id=cr.rescue_id                 inner join rescue_order_current_record rocr on ro.rescue_id=rocr.rescue_id                 inner join emergency_center center on center.center_id=ro.center_id                 inner join call_type on call_type.call_type_id=ro.call_type and call_type.rescue_type=1                 left join doctor on doctor.doc_id=ro.doc_id                 left join driver on driver.driver_id=ro.driver_id                 left join dispatcher on dispatcher.dispatcher_id=ro.dp_id                 left join ambulance on ambulance.ambulance_id=ro.ambulance_id                 left join stretcher on stretcher.stretcher_id=ro.stretcher_id                 left join rescue_status_record cancel on cancel.rescue_id=ro.rescue_id and cancel.rescue_status=-1        where cr.parent_rescue_center_id=70 and cr.create_time BETWEEN '2026-05-31 00:00:00' and '2026-05-31 23:59:59' and rocr.tag_type is null
+
+
+【问题】解析失败: not supported.pos 1220, line 1, column 1216, token INNER
+
+【根因】表别名 `cross` 与 SQL 关键字 CROSS 冲突
+  - SQLSelectParser.parseTableSourceRest() 在别名处理阶段(1577-1579)检测到
+    identifier "cross" 的 hash 匹配 FnvHash.Constants.CROSS，跳过别名设置
+  - 在 join 类型判断阶段(1758-1766)把 `cross` 当作 CROSS 关键字消费掉，
+    期望 JOIN token 但实际是 INNER，joinType 保持 null
+  - INNER token 未被消费，上层解析器无法处理，抛出 ParserException
+
+【修复】
+  1. 去除文件中的 0x14 (DC4) 控制字符
+  2. 表别名 `cross` → cr
+
+【文件】core/src/test/sql/2/zdzsj_node116
+
+============================================================
+ 测试执行结果
+============================================================
+
+Running com.ankki.druid.sql.v1.BatchSqlParserTest
+----------------------------------------
+[1] select ro.rescue_id, ... from cross_regional_rescue_bind cr
+    inner join rescue_order_v2 ro on ro.rescue_id=cr.rescue_id
+    inner join rescue_order_current_record rocr ...
+    inner join emergency_center center ...
+    inner join call_type ...
+    left join doctor ...
+    left join driver ...
+    left join dispatcher ...
+    left join ambulance ...
+    left join stretcher ...
+    left join rescue_status_record cancel ...
+    where cr.parent_rescue_center_id=70 ...
+
+[1] Success            ← 解析成功！
+----------------------------------------
+Tests run: 1, Failures: 0, Errors: 0
+BUILD SUCCESS
+============================================================
+ 2026-06-10 16:06
+============================================================
