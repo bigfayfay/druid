@@ -49,12 +49,15 @@ import java.util.concurrent.TimeUnit;
 @Threads(Threads.MAX) // 默认使用所有可用核心数，可通过命令行 -t 覆盖
 public class SqlParserTimeBenchmark {
 
-    @Param({"mysql"})
+    @Param({"oracle"})
     private String dbTypeStr;
     private DbType dbType;
 
+    /**
+     * SELECT * FROM `report_antibiotic_condition_statis` limit 5
+     */
     @Param({
-            "SELECT * FROM `report_antibiotic_condition_statis` limit 5"
+            "SELECT to_char(a.REQ_DATE_TIME, 'yyyy-MM-dd hh24:mi:ss') AS REQ_DATE_TIME, a.REQ_PHYSICIAN, a.EXAM_CLASS , to_char(a.REPORT_DATE_TIME, 'yyyy-MM-dd hh24:mi:ss') AS REPORT_DATE_TIME, a.REPORTER , a.EXAM_NO, a.patient_id, b.visit_date, b.visit_no , NULL AS agfa_exam_no FROM exam.EXAM_MASTER a, outp_doctor_assistant b WHERE a.exam_no = b.id AND a.PATIENT_ID = b.PATIENT_ID AND b.PATIENT_ID = 'pt101' AND b.outp_id = 'bt003'  and b.VISIT_DATE = to_date('2025-03-23','yyyy-MM-dd') and b.visit_no='131'"
     })
     private String sql;
 
