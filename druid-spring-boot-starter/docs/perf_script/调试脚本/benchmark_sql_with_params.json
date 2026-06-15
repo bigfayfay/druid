@@ -1,0 +1,352 @@
+[
+  {
+    "index": 1,
+    "placeholder_count": 119,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=554998,#3=84594827232,#4='imsi_912865',#5='46001341230',#6='2026-04-21 11:33:05',#..."
+  },
+  {
+    "index": 2,
+    "placeholder_count": 118,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=611432,#3=61567174593,#4='imsi_318670',#5='46004128519',#6='2026-05-03 11:33:05',#..."
+  },
+  {
+    "index": 3,
+    "placeholder_count": 118,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=771325,#3=44314037888,#4='imsi_633276',#5='46007693218',#6='2026-04-28 11:33:05',#..."
+  },
+  {
+    "index": 4,
+    "placeholder_count": 120,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=653359,#3=54731908750,#4='imsi_768714',#5='46009022316',#6='2026-04-17 11:33:05',#..."
+  },
+  {
+    "index": 5,
+    "placeholder_count": 131,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=25811,#3=58726395222,#4='imsi_455000',#5='46003307159',#6='2026-04-19 11:33:05',#7..."
+  },
+  {
+    "index": 6,
+    "placeholder_count": 128,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=519697,#3=46398689896,#4='imsi_627248',#5='46003588552',#6='2026-04-29 11:33:05',#..."
+  },
+  {
+    "index": 7,
+    "placeholder_count": 10,
+    "original_sql": "INSERT INTO ud.xfer_stat_20260512 xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?::character varyin...",
+    "sql_with_params": "INSERT INTO ud.xfer_stat_20260512 xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?::character varyin...",
+    "param_metadata": ";(#1='value_1',#2=792426,#3=45688240857,#4='imsi_573508',#5='46003669474',#6='2026-04-18 11:33:05',#..."
+  },
+  {
+    "index": 8,
+    "placeholder_count": 0,
+    "original_sql": "UPDATE ud.xfer_statfile_record xfer_statfile_recordSET file_offset = $1::numeric(10, 0)WHERE ((file_name)::text = $2::text);",
+    "sql_with_params": "UPDATE ud.xfer_statfile_record xfer_statfile_recordSET file_offset = $1::numeric(10, 0)WHERE ((file_name)::text = $2::text);;()",
+    "param_metadata": ";()"
+  },
+  {
+    "index": 9,
+    "placeholder_count": 118,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=113417,#3=54841417593,#4='imsi_821620',#5='46006513565',#6='2026-04-16 11:33:05',#..."
+  },
+  {
+    "index": 10,
+    "placeholder_count": 40,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=10425,#3=63145465367,#4='imsi_403953',#5='46003725710',#6='2026-05-08 11:33:05',#7..."
+  },
+  {
+    "index": 11,
+    "placeholder_count": 330,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=791946,#3=77291444818,#4='imsi_213251',#5='46001345635',#6='2026-05-04 11:33:05',#..."
+  },
+  {
+    "index": 12,
+    "placeholder_count": 470,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=763689,#3=24518870100,#4='imsi_471822',#5='46005650641',#6='2026-04-26 11:33:05',#..."
+  },
+  {
+    "index": 13,
+    "placeholder_count": 480,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=320443,#3=86102843731,#4='imsi_257291',#5='46002351495',#6='2026-04-21 11:33:05',#..."
+  },
+  {
+    "index": 14,
+    "placeholder_count": 570,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=902856,#3=77568397049,#4='imsi_110341',#5='46006775414',#6='2026-05-11 11:33:05',#..."
+  },
+  {
+    "index": 15,
+    "placeholder_count": 670,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=558602,#3=19576588421,#4='imsi_919524',#5='46003594720',#6='2026-04-19 11:33:05',#..."
+  },
+  {
+    "index": 16,
+    "placeholder_count": 116,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=987405,#3=88954477184,#4='imsi_866327',#5='46006938838',#6='2026-04-27 11:33:05',#..."
+  },
+  {
+    "index": 17,
+    "placeholder_count": 117,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=843771,#3=21996311246,#4='imsi_558684',#5='46008161911',#6='2026-05-10 11:33:05',#..."
+  },
+  {
+    "index": 18,
+    "placeholder_count": 117,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=552690,#3=77921313524,#4='imsi_535922',#5='46005365056',#6='2026-04-19 11:33:05',#..."
+  },
+  {
+    "index": 19,
+    "placeholder_count": 118,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=41485,#3=99590108431,#4='imsi_835478',#5='46002304006',#6='2026-04-30 11:33:05',#7..."
+  },
+  {
+    "index": 20,
+    "placeholder_count": 117,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=925988,#3=77666681683,#4='imsi_257406',#5='46008689364',#6='2026-05-04 11:33:05',#..."
+  },
+  {
+    "index": 21,
+    "placeholder_count": 129,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=524385,#3=72047990328,#4='imsi_734899',#5='46003893420',#6='2026-05-06 11:33:05',#..."
+  },
+  {
+    "index": 22,
+    "placeholder_count": 126,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=833265,#3=17397543684,#4='imsi_397009',#5='46003572394',#6='2026-04-19 11:33:05',#..."
+  },
+  {
+    "index": 23,
+    "placeholder_count": 125,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=32003,#3=37526486138,#4='imsi_252913',#5='46005436998',#6='2026-05-02 11:33:05',#7..."
+  },
+  {
+    "index": 24,
+    "placeholder_count": 128,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=765327,#3=13662320391,#4='imsi_308902',#5='46002963510',#6='2026-04-21 11:33:05',#..."
+  },
+  {
+    "index": 25,
+    "placeholder_count": 120,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=844913,#3=67071383544,#4='imsi_345917',#5='46009298657',#6='2026-04-25 11:33:05',#..."
+  },
+  {
+    "index": 26,
+    "placeholder_count": 128,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=697298,#3=69908180193,#4='imsi_982863',#5='46004302113',#6='2026-05-15 11:33:05',#..."
+  },
+  {
+    "index": 27,
+    "placeholder_count": 129,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=995845,#3=46902747322,#4='imsi_722864',#5='46005439407',#6='2026-05-16 11:33:05',#..."
+  },
+  {
+    "index": 28,
+    "placeholder_count": 132,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=562177,#3=74838703371,#4='imsi_173960',#5='46004507038',#6='2026-05-15 11:33:05',#..."
+  },
+  {
+    "index": 29,
+    "placeholder_count": 127,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=629995,#3=72427381216,#4='imsi_443364',#5='46006616038',#6='2026-04-27 11:33:05',#..."
+  },
+  {
+    "index": 30,
+    "placeholder_count": 132,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=310954,#3=49851892820,#4='imsi_284412',#5='46002952479',#6='2026-04-23 11:33:05',#..."
+  },
+  {
+    "index": 31,
+    "placeholder_count": 119,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=193679,#3=64916587196,#4='imsi_459050',#5='46001813027',#6='2026-04-30 11:33:05',#..."
+  },
+  {
+    "index": 32,
+    "placeholder_count": 127,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=269912,#3=56986077967,#4='imsi_407494',#5='46006398783',#6='2026-05-09 11:33:05',#..."
+  },
+  {
+    "index": 33,
+    "placeholder_count": 127,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=911158,#3=83294391618,#4='imsi_464633',#5='46005100648',#6='2026-04-17 11:33:05',#..."
+  },
+  {
+    "index": 34,
+    "placeholder_count": 129,
+    "original_sql": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "sql_with_params": "INSERT INTO ud.dr_gsm_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, opp_number, a_number, translated_number, start_time, duration\t, call_type, video_type, fcitype, test_cdr_flag, c...",
+    "param_metadata": ";(#1='value_1',#2=976341,#3=88452278057,#4='imsi_424798',#5='46002783014',#6='2026-04-16 11:33:05',#..."
+  },
+  {
+    "index": 35,
+    "placeholder_count": 118,
+    "original_sql": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "sql_with_params": "INSERT INTO ud.dr_ggprs_20260512 a\t(service_id, dr_type, imsi, notify_type, user_number\t, stop_time, start_time, duration, mns_type, test_cdr_flag\t, imei, sequence_id, lac_id, cell_id, stop_cause\t, or...",
+    "param_metadata": ";(#1='value_1',#2=54855,#3=44534981961,#4='imsi_641083',#5='46006448996',#6='2026-05-08 11:33:05',#7..."
+  },
+  {
+    "index": 36,
+    "placeholder_count": 133,
+    "original_sql": "BEGIN;INSERT INTO DR_SMS_20260512 a\t(HPLMN2, ADDUP_RES_USING_VAL, CALL_REFNUM, IMEI, MOC_BILL_TYPE\t, MTC_BILL_TYPE, OPERATOR_CODE, OPP_GATEWAY, RESERVE1, RESERVE2\t, RESERVE3, RESERVE4, RESERVE_FIELDS,...",
+    "sql_with_params": "BEGIN;INSERT INTO DR_SMS_20260512 a\t(HPLMN2, ADDUP_RES_USING_VAL, CALL_REFNUM, IMEI, MOC_BILL_TYPE\t, MTC_BILL_TYPE, OPERATOR_CODE, OPP_GATEWAY, RESERVE1, RESERVE2\t, RESERVE3, RESERVE4, RESERVE_FIELDS,...",
+    "param_metadata": ";(#1='value_1',#2=648992,#3=42375855887,#4='imsi_627387',#5='46007635285',#6='2026-05-08 11:33:05',#..."
+  },
+  {
+    "index": 37,
+    "placeholder_count": 18,
+    "original_sql": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "sql_with_params": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "param_metadata": ";(#1='value_1',#2=51037,#3=98850726805,#4='imsi_757797',#5='46004622717',#6='2026-04-18 11:33:05',#7..."
+  },
+  {
+    "index": 38,
+    "placeholder_count": 19,
+    "original_sql": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "sql_with_params": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "param_metadata": ";(#1='value_1',#2=81928,#3=85858123970,#4='imsi_375403',#5='46008757039',#6='2026-05-09 11:33:05',#7..."
+  },
+  {
+    "index": 39,
+    "placeholder_count": 18,
+    "original_sql": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "sql_with_params": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "param_metadata": ";(#1='value_1',#2=26753,#3=60316134253,#4='imsi_775379',#5='46007672490',#6='2026-05-11 11:33:05',#7..."
+  },
+  {
+    "index": 40,
+    "placeholder_count": 17,
+    "original_sql": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "sql_with_params": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "param_metadata": ";(#1='value_1',#2=668005,#3=80110901165,#4='imsi_956702',#5='46009800051',#6='2026-04-27 11:33:05',#..."
+  },
+  {
+    "index": 41,
+    "placeholder_count": 17,
+    "original_sql": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "sql_with_params": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "param_metadata": ";(#1='value_1',#2=886907,#3=73077850823,#4='imsi_937332',#5='46004810572',#6='2026-04-20 11:33:05',#..."
+  },
+  {
+    "index": 42,
+    "placeholder_count": 18,
+    "original_sql": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "sql_with_params": "INSERT INTO ud.de_stat_20260512 a\t(original_file, starttime, date_time, proc_info, earlist\t, endtime, errorstat, filestat, filterstat, latest\t, newtbcgcount, nowritecount, readfilename, readfilesize, ...",
+    "param_metadata": ";(#1='value_1',#2=210322,#3=67087870841,#4='imsi_837513',#5='46001426587',#6='2026-04-16 11:33:05',#..."
+  },
+  {
+    "index": 43,
+    "placeholder_count": 350,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=106397,#3=97221927598,#4='imsi_521807',#5='46001690984',#6='2026-05-13 11:33:05',#..."
+  },
+  {
+    "index": 44,
+    "placeholder_count": 360,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=260711,#3=52622148299,#4='imsi_436142',#5='46003262267',#6='2026-04-30 11:33:05',#..."
+  },
+  {
+    "index": 45,
+    "placeholder_count": 90,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=859509,#3=38626422518,#4='imsi_913138',#5='46001901051',#6='2026-04-29 11:33:05',#..."
+  },
+  {
+    "index": 46,
+    "placeholder_count": 140,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=517587,#3=86795888581,#4='imsi_303008',#5='46007523451',#6='2026-05-04 11:33:05',#..."
+  },
+  {
+    "index": 47,
+    "placeholder_count": 60,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=669612,#3=69574081103,#4='imsi_587689',#5='46009921701',#6='2026-05-05 11:33:05',#..."
+  },
+  {
+    "index": 48,
+    "placeholder_count": 80,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=387759,#3=29211405301,#4='imsi_513750',#5='46005970900',#6='2026-04-16 11:33:05',#..."
+  },
+  {
+    "index": 49,
+    "placeholder_count": 110,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=246121,#3=24216415047,#4='imsi_583705',#5='46008922745',#6='2026-04-20 11:33:05',#..."
+  },
+  {
+    "index": 50,
+    "placeholder_count": 260,
+    "original_sql": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "sql_with_params": "BEGIN;INSERT INTO xfer_stat_20260512\t(srcfilename, srcpath, srcfilesize, srchost, destfilename\t, destfilepath, destfilesize, midfilesize, desthost, datetime)VALUES (?, ?, ?::float8, ?, ?\t, ?, ?::float...",
+    "param_metadata": ";(#1='value_1',#2=886532,#3=19025650972,#4='imsi_685773',#5='46008727538',#6='2026-05-09 11:33:05',#..."
+  }
+]

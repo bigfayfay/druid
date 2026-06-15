@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash('D:/Program Files/Java/jdk-1.8-411/bin/java' -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -Dfile.encoding=UTF-8 -c ' *)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes SimpleTest.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" SimpleTest)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes DebugTest.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" DebugTest)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes DetailedTest.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" DetailedTest)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/jar\" tf \"f:\\\\2026年\\\\03-现场项目\\\\AAS-B07\\\\02-中广电移动网络\\\\druid-ak-1.2.27-jar-with-dependencies.jar\")",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes TestStoredProcedureDetection.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" TestStoredProcedureDetection)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes com/ankki/druid/parser/utils/CompareWithOriginalTest.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" com.ankki.druid.parser.utils.CompareWithOriginalTest)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes com/ankki/druid/parser/utils/CompareAllThreeMethodsTest.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" com.ankki.druid.parser.utils.CompareAllThreeMethodsTest)",
+      "Bash(grep -v \"^$\")",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes com/ankki/druid/parser/utils/OriginalMethodTest.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp ../druid-ak-1.2.27-jar-with-dependencies.jar:target/classes com.ankki.druid.parser.utils.OriginalMethodTest)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" com.ankki.druid.parser.utils.OriginalMethodTest)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes com/ankki/druid/parser/utils/TestSql6.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" com.ankki.druid.parser.utils.TestSql6)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp ../druid-ak-1.2.27-jar-with-dependencies.jar -d target/classes com/ankki/druid/parser/utils/TestSimpleSqls.java)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/java\" -cp \"../druid-ak-1.2.27-jar-with-dependencies.jar;target/classes\" com.ankki.druid.parser.utils.TestSimpleSqls)",
+      "Bash(\"D:/Program Files/Java/jdk-1.8-411/bin/javac\" -encoding UTF-8 -cp druid-ak-1.2.27-jar-with-dependencies.jar -d druid-ak/target/classes druid-ak/com/ankki/druid/parser/utils/EnhancedCachedAkOutputVisitorUtilsTest.java)",
+      "Bash(py -c \"import zipfile; jar = zipfile.ZipFile\\('druid-ak-1.2.27-jar-with-dependencies.jar'\\); print\\('EnhancedCachedAkOutputVisitorUtils:', 'FOUND' if 'com/ankki/druid/parser/template/EnhancedCachedAkOutputVisitorUtils.class' in jar.namelist\\(\\) else 'NOT FOUND'\\)\")",
+      "Bash(iconv -f GBK -t UTF-8)",
+      "Bash(py -c \"import zipfile; jar = zipfile.ZipFile\\('druid-ak-1.2.27-jar-with-dependencies.jar'\\); print\\('Test class in JAR:', 'FOUND' if 'com/ankki/druid/parser/utils/EnhancedCachedAkOutputVisitorUtilsTest.class' in jar.namelist\\(\\) else 'NOT FOUND'\\)\")"
+    ]
+  }
+}

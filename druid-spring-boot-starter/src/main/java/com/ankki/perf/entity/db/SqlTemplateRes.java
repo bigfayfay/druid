@@ -1,0 +1,57 @@
+package com.ankki.perf.entity.db;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
+@Data
+@TableName("sql_template_res")
+public class SqlTemplateRes {
+
+    /**
+     * 主键
+     */
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    private Integer dbType;
+
+    private String operType;
+
+    /**
+     * 操作句子
+     */
+    private String operSentence;
+
+    /**
+     * 状态
+     */
+    private String status;
+
+    /**
+     * 耗时(ns)
+     */
+    private Long costNs;
+
+    /**
+     * SQL长度
+     */
+    private Integer sqlLen;
+    /**
+     * SQL md5
+     */
+    private String sqlMd5;
+
+    private Integer failNum;
+    /**
+     * 失败原因
+     */
+    private String failReason;
+
+    /**
+     * 备注
+     */
+    private String remark;
+}

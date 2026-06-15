@@ -1082,6 +1082,25 @@ public class OracleOutputVisitor extends SQLASTOutputVisitor implements OracleAS
     }
 
     @Override
+    public boolean visit(OracleAlterSystemStatement x) {
+        print0(ucase ? "ALTER SYSTEM " : "alter system ");
+        if ("KILL".equalsIgnoreCase(x.getAction())) {
+            print0(ucase ? "KILL SESSION " : "kill session ");
+            x.getSessionId().accept(this);
+        } else {
+            // Handle other ALTER SYSTEM actions if needed
+            if (x.getAction() != null) {
+                print0(ucase ? x.getAction() : x.getAction().toLowerCase());
+                print(' ');
+            }
+            if (x.getSessionId() != null) {
+                x.getSessionId().accept(this);
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean visit(OracleDatetimeExpr x) {
         x.getExpr().accept(this);
         SQLExpr timeZone = x.getTimeZone();

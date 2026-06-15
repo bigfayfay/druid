@@ -1,0 +1,9 @@
+Exception in thread "main" java.lang.IllegalStateException: Error: unexpected tag =  
+ at "JMH S 81 com.ankki.druid.parser.utils.LightweightCachedAkOutputVisitorUtilsAllSqlBenchmark S 113 com.ankki.druid.parser.utils.generated.LightweightCachedAkOutputVisitorUtilsAllSqlBenchmark_mixedScenario_jmhTest S 13 mixedScenario S 10 Throughput E A 1 1 1 E I 1 3 T 3 2 s E I 1 5 T 4 5 s E I 1 1 E E E E E E U 12 MICROSECONDS E E ", pos 291
+	at org.openjdk.jmh.util.lines.TestLineReader.error(TestLineReader.java:85)
+	at org.openjdk.jmh.util.lines.TestLineReader.nextOptionalInt(TestLineReader.java:99)
+	at org.openjdk.jmh.runner.BenchmarkListEntry.<init>(BenchmarkListEntry.java:121)
+	at org.openjdk.jmh.runner.BenchmarkList.find(BenchmarkList.java:136)
+	at org.openjdk.jmh.runner.Runner.internalRun(Runner.java:256)
+	at org.openjdk.jmh.runner.Runner.run(Runner.java:206)
+	at org.openjdk.jmh.Main.main(Main.java:71)

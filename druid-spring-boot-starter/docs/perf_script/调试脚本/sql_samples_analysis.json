@@ -1,0 +1,102 @@
+[
+  {
+    "index": 1,
+    "length": "135",
+    "sql": "select * from admin_us where fid='吕郎孙廉张奚滕hcv32m' and fd = 20000000001 and fd1='rabbit dragon monkey rooster 诸葛spring'"
+  },
+  {
+    "index": 2,
+    "length": "107",
+    "sql": "select * from admin_us where fid='吴倪许岑许戚楮tfutws' and fd = 20000000001 and fd1='rabbit dragon'"
+  },
+  {
+    "index": 3,
+    "length": "100",
+    "sql": "select * from admin_us where fid='罗葛孔孙雷朱魏t8o7mv' and fd = 20000000001 and fd1='rabbit'"
+  },
+  {
+    "index": 4,
+    "length": "174",
+    "sql": "select * from admin_us where fid='韩毕喻吕马葛雷91morj' and fd = 20000000001 and fd1='rabbit dragon monkey rooster 诸葛spring 东方summer 尉迟autumn 令狐winter'"
+  },
+  {
+    "index": 5,
+    "length": "122",
+    "sql": "select * from admin_us where fid='陈水范李方花孔b8833q' and fd = 20000000001 and fd1='rabbit dragon monkey rooster'"
+  },
+  {
+    "index": 6,
+    "length": "107",
+    "sql": "select * from admin_us where fid='吕郝鲍薛方苏蒋wu5c38' and fd = 20000000001 and fd1='rabbit dragon'"
+  },
+  {
+    "index": 7,
+    "length": "114",
+    "sql": "select * from admin_us where fid='窦费鲁倪章昌陈pug2w7' and fd = 20000000001 and fd1='rabbit dragon monkey'"
+  },
+  {
+    "index": 8,
+    "length": "100",
+    "sql": "select * from admin_us where fid='水薛秦谢李吕李55mevm' and fd = 20000000001 and fd1='rabbit'"
+  },
+  {
+    "index": 9,
+    "length": "83",
+    "sql": "select * from admin_us where fid='苏周酆冯花柳任9cd70s' and fd = 20000000001"
+  },
+  {
+    "index": 10,
+    "length": "135",
+    "sql": "select * from admin_us where fid='喻马喻杨花范岑umr15s' and fd = 20000000001 and fd1='rabbit dragon monkey rooster 诸葛spring'"
+  },
+  {
+    "index": 11,
+    "length": "107",
+    "sql": "select * from admin_us where fid='杨魏何凤尤费魏61irc7' and fd = 20000000001 and fd1='rabbit dragon'"
+  },
+  {
+    "index": 12,
+    "length": "100",
+    "sql": "select * from admin_us where fid='韦唐毕薛俞赵韩dotsdi' and fd = 20000000001 and fd1='rabbit'"
+  },
+  {
+    "index": 13,
+    "length": "161",
+    "sql": "select * from admin_us where fid='吕窦郎柳吴奚苗qpfadm' and fd = 20000000001 and fd1='rabbit dragon monkey rooster 诸葛spring 东方summer 尉迟autumn'"
+  },
+  {
+    "index": 14,
+    "length": "122",
+    "sql": "select * from admin_us where fid='卫姜奚唐水费许cmloac' and fd = 20000000001 and fd1='rabbit dragon monkey rooster'"
+  },
+  {
+    "index": 15,
+    "length": "107",
+    "sql": "select * from admin_us where fid='章潘罗吴郑尤范fd9qdh' and fd = 20000000001 and fd1='rabbit dragon'"
+  },
+  {
+    "index": 16,
+    "length": "114",
+    "sql": "select * from admin_us where fid='唐王吕范卫汤秦w6f256' and fd = 20000000001 and fd1='rabbit dragon monkey'"
+  },
+  {
+    "index": 17,
+    "length": "100",
+    "sql": "select * from admin_us where fid='酆罗贺袁方彭水81ih0g' and fd = 20000000001 and fd1='rabbit'"
+  },
+  {
+    "index": 18,
+    "length": "83",
+    "sql": "select * from admin_us where fid='吕酆韩吴范郎薛cnirw5' and fd = 20000000001"
+  },
+  {
+    "index": 19,
+    "length": "135",
+    "sql": "select * from admin_us where fid='孔尤楮孙鲁凤苗qvwcnh' and fd = 20000000001 and fd1='rabbit dragon monkey rooster 诸葛spring'"
+  },
+  {
+    "index": 20,
+    "length": "107",
+    "sql": "select * from admin_us where fid='方华李费彭姜费km9n8l' and fd = 20000000001 and fd1='rabbit dragon'"
+  }
+]

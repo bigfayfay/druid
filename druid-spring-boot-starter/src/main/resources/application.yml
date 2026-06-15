@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: audit-template
+
+  datasource: #
+    dynamic:
+      primary: mysql
+      strict: false
+      lazy: true
+      datasource:
+        mysql:
+          url: jdbc:mysql://${DB_HOST:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:lg6_sql_node11}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          username: ${DB_USER:root}
+          password: Ankki_mySQL123
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          druid:
+            initialSize: 10
+            maxActive: 100
+            minIdle: 10
+            maxWait: 60000
+            validationQuery: SELECT 1
+            testWhileIdle: true
+            testOnBorrow: true
+            testOnReturn: true
+            poolPreparedStatements: true
+        ck:
+          url: jdbc:clickhouse://${DB_HOST_CK:172.19.4.41}:${DB_PORT_CK:8123}/${DB_NAME_CK:bs_audit}?socket_timeout=6000000
+          username: ${DB_USER_CK:root}
+          password: Ankki_cK123
+          driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+          druid:
+            initialSize: 10
+            maxActive: 100
+            minIdle: 10
+            maxWait: 60000
+            validationQuery: SELECT 1
+            testWhileIdle: true
+            testOnBorrow: true
+            testOnReturn: true
+
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# Performance test configuration - all can be overridden via -D flags
+# e.g., -Dperf.batch-size=2000 -Dperf.max-records=100000
+perf:
+  enabled: ${PERF_ENABLED:true}
+  warmup-batches: ${PERF_WARMUP_BATCHES:2}
+  thread-count: ${PERF_THREAD_COUNT:1}
+  queue-capacity: ${PERF_QUEUE_CAPACITY:15}
+
+  data-post-handler: ${PERF_DATA_POST_HANDLER:res-update}
+  write-failed-file: ${PERF_WRITE_FAILED_FILE:true}
+  write-result-db: ${PERF_WRITE_RESULT_DB:true}
+  flush-threshold: ${PERF_FLUSH_THRESHOLD:70}
+  error-only: ${PERF_ERROR_ONLY:false}
+
+  data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:sql-res}
+  start-id: ${PERF_START_ID:0}
+  max-records: ${PERF_MAX_RECORDS:10000000}
+  batch-size: ${PERF_BATCH_SIZE:2500}
+  max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
+  db-type: ${PERF_DB_TYPE:oracle}
+  tenant-id: ${PERF_TENANT_ID:0}
+  # dbType转换配置：将数据库中的dbType值转换为解析器需要的值，格式：8-cache, 57-iris, 1-sql_server,3-oracle
+  db-type-map: ${PERF_DB_TYPE_MAP:8=1,57=1}
+
+# 日志配置统一由 logback-spring.xml 管理
