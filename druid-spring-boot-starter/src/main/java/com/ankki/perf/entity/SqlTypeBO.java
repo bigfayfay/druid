@@ -18,6 +18,8 @@ public class SqlTypeBO {
 
     private String operSentence;
 
+    private String tenantId;
+
     public SqlTemplateRes toSqlReds(){
         SqlTemplateRes res = new SqlTemplateRes();
         res.setId(id);
@@ -25,6 +27,7 @@ public class SqlTypeBO {
         res.setOperType(operType);
         res.setOperSentence(operSentence);
         res.setSqlLen(operSentence != null ? operSentence.length() : 0);
+        res.setTenantId(tenantId);
         return res;
     }
 }

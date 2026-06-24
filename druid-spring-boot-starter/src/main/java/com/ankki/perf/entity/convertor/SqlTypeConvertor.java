@@ -29,4 +29,9 @@ public interface SqlTypeConvertor {
 
     public SqlTypeBO resToEntity(SqlTemplateRes tem);
 
+
+    @Mapping(target = "md5", source = "tem.sqlMd5")
+    @Mapping(target = "template", source = "tem.template")
+    public SqlTemplateRecord resToRecord(SqlTemplateRes tem);
+
 }

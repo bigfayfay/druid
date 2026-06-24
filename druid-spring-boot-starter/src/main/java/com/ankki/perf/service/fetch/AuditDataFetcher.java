@@ -43,6 +43,7 @@ public class AuditDataFetcher implements DataFetcherService {
         try {
             LambdaQueryWrapper<AuditBaseDO> wrapper = new LambdaQueryWrapper<>();
             wrapper.select(AuditBaseDO::getId,
+                    AuditBaseDO::getTenantId,
                     AuditBaseDO::getHappenTime,
                     AuditBaseDO::getDbType,
                     AuditBaseDO::getOperType,

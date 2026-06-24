@@ -172,9 +172,13 @@ public class PerfTestRunner implements CommandLineRunner {
 
                     // 构建结果记录
                     SqlTemplateRes res = record.toSqlReds();
-                    res.setStatus(sqlRes[0]);
                     res.setCostNs(costNanos);
+                    res.setStatus(sqlRes[0]);
+                    // 失败的,没有sql模板
+                    res.setSqlMd5(sqlRes[1]);
+                    res.setTemplate(sqlRes[2]);
                     res.setOperSentence(sql);
+                    res.setTenantId(record.getTenantId());
                     if (AkSqlParserStatusEnum.Success != statusEnum) {
                         res.setFailReason(sqlRes.length > 4 ? sqlRes[4] : null);
                     }

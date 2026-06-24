@@ -15,20 +15,24 @@ public class SqlTemplateRecord {
 
     private String md5;
 
+    private Integer dbType;
+
     @TableField("oper_type")
     private String operType;
 
-//    @TableField("tableName")
-//    private String tableName;
-//
-//    @TableField("fieldName")
-//    private String fieldName;
+    @TableField("tableName")
+    private String tableName;
+
+    @TableField("fieldName")
+    private String fieldName;
 
     private String template;
 
-//    @TableField("create_time")
-//    private Long createTime;
-//
-//    @TableField("tenantId")
-//    private String tenantId;
+    private String operSentence;
+
+    @TableField("create_time")
+    private Long createTime;
+
+    @TableField("tenantId")
+    private String tenantId;
 }

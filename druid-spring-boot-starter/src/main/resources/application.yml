@@ -6,11 +6,10 @@ spring:
     dynamic:
       primary: mysql
       strict: false
-      lazy: true
       datasource:
         mysql:
-          url: jdbc:mysql://${DB_HOST:172.19.4.41}:${DB_PORT:3306}/${DB_NAME:lg6_sql_node11}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-          username: ${DB_USER:root}
+          url: jdbc:mysql://${DB_HOST:172.19.6.210}:${DB_PORT:3306}/${DB_NAME:bs_audit}?autoReconnect=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          username: ${DB_USER:sroot}
           password: Ankki_mySQL123
           driver-class-name: com.mysql.cj.jdbc.Driver
           druid:
@@ -24,7 +23,7 @@ spring:
             testOnReturn: true
             poolPreparedStatements: true
         ck:
-          url: jdbc:clickhouse://${DB_HOST_CK:172.19.4.41}:${DB_PORT_CK:8123}/${DB_NAME_CK:bs_audit}?socket_timeout=6000000
+          url: jdbc:clickhouse://${DB_HOST_CK:172.19.6.210}:${DB_PORT_CK:8123}/${DB_NAME_CK:bs_audit}?socket_timeout=6000000
           username: ${DB_USER_CK:root}
           password: Ankki_cK123
           driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
@@ -51,19 +50,23 @@ perf:
   thread-count: ${PERF_THREAD_COUNT:1}
   queue-capacity: ${PERF_QUEUE_CAPACITY:15}
 
-  data-post-handler: ${PERF_DATA_POST_HANDLER:res-update}
+  # post
+  data-post-handler: ${PERF_DATA_POST_HANDLER:template-insert}
   write-failed-file: ${PERF_WRITE_FAILED_FILE:true}
   write-result-db: ${PERF_WRITE_RESULT_DB:true}
   flush-threshold: ${PERF_FLUSH_THRESHOLD:70}
   error-only: ${PERF_ERROR_ONLY:false}
 
-  data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:sql-res}
+  # fetcher
+  data-fetcher-type: ${PERF_DATA_FETCHER_TYPE:audit}
   start-id: ${PERF_START_ID:0}
-  max-records: ${PERF_MAX_RECORDS:10000000}
+  max-records: ${PERF_MAX_RECORDS:10000}
   batch-size: ${PERF_BATCH_SIZE:2500}
-  max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:15}
+  max-consecutive-empty: ${PERF_MAX_CONSECUTIVE_EMPTY:1000}
   db-type: ${PERF_DB_TYPE:oracle}
   tenant-id: ${PERF_TENANT_ID:0}
+
+  # data-deal
   # dbType转换配置：将数据库中的dbType值转换为解析器需要的值，格式：8-cache, 57-iris, 1-sql_server,3-oracle
   db-type-map: ${PERF_DB_TYPE_MAP:8=1,57=1}
 

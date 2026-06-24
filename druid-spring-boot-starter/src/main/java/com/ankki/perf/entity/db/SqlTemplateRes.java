@@ -20,6 +20,8 @@ public class SqlTemplateRes {
 
     private String operType;
 
+    @TableField(exist = false)
+    private String template;
     /**
      * 操作句子
      */
@@ -54,4 +56,7 @@ public class SqlTemplateRes {
      * 备注
      */
     private String remark;
+
+    @TableField(exist = false)
+    private String tenantId;
 }

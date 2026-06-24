@@ -17,6 +17,7 @@ import com.ankki.druid.parser.AkDbTypeEnum;
 import com.ankki.druid.parser.AkDruidResult;
 import com.ankki.druid.parser.AkSqlParserStatusEnum;
 import com.ankki.druid.parser.AkWallProviderEnum;
+import com.ankki.druid.parser.utils.AkDruidUtil;
 import com.ankki.druid.parser.visitor.DbVisitorUtils;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -292,7 +293,7 @@ extends ParameterizedOutputVisitorUtils {
 
     private static DbType getDbType(Integer akDbTypeId) {
         if (dbType == null) {
-            dbType = akDruidDbTypeMap.get(akDbTypeId);
+            dbType = AkDruidUtil.getDbType(akDbTypeId);
             akResult.setDbType(dbType);
         }
         return dbType;

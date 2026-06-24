@@ -20,6 +20,7 @@ import com.ankki.druid.parser.template.AkLightweightCachedDruidSqlMonitor;
 import com.ankki.druid.parser.template.AkLightweightCachedOutputVisitorUtils;
 import com.ankki.druid.parser.template.AkOutputVisitorUtils;
 import com.ankki.druid.parser.template.AkSqlTemplateMonitor;
+import com.ankki.druid.parser.utils.AkDruidUtil;
 import com.ankki.druid.parser.visitor.AkSchemaStatVisitor;
 
 import java.io.FileWriter;
@@ -92,7 +93,7 @@ public class CustomerOutputVisitorUtils {
     }
 
     private static DbType getDbType(Integer akDbTypeId) {
-        return AkDruidSqlParser.akDruidDbTypeMap.get(akDbTypeId);
+        return AkDruidUtil.getDbType(akDbTypeId);
     }
 
     public static String getSqlTemplate(String sql, Integer akDbTypeId) {
